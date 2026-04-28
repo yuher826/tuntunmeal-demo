@@ -1,120 +1,133 @@
 'use client';
-
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import BottomNav from '../components/BottomNav';
 
-export default function Subscription() {
-  const router = useRouter();
-  const [selectedPlan, setSelectedPlan] = useState<'weekly' | 'monthly'>('weekly');
-  const [menuType, setMenuType] = useState<'auto' | 'manual'>('auto');
+const plans = [
+  { id: 'daily', name: '일일권', price: 9500, desc: '오늘 하루만 주문', badge: '', color: '#888' },
+  { id: 'weekly', name: '주간 구독', price: 8500, originalPrice: 9500, desc: '월~금 5일 자동 예약', badge: '10% 할인', color: '#3B6D11' },
+  { id: 'monthly', name: '월간 구독', price: 8075, originalPrice: 9500, desc: '한 달 자동 예약 · 최대 혜택', badge: '15% 할인 🔥', color: '#E67E22' },
+];
 
-  const plans = {
-    weekly: { name: '주간 구독', desc: '월~금 5일 / 매주 자동 갱신', price: '45,125원', original: '47,500원', badges: ['자동결제', '우선슬롯', '2주 일시정지'], hot: true },
-    monthly: { name: '월간 구독', desc: '월~금 20일 / 매월 1일 자동결제', price: '180,500원', original: '190,000원', badges: ['자동결제', '우선슬롯', '최대 할인'], hot: false },
+export default function SubscriptionPage() {
+  const [selected, setSelected] = useState('weekly');
+  const [subscribed, setSubscribed] = useState(false);
+  const [showCancelPopup, setShowCancelPopup] = useState(false);
+  const [toast, setToast] = useState('');
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 2500);
   };
 
+  const handleSubscribe = () => {
+    setSubscribed(true);
+    showToast('구독이 시작됐어요! 🎉');
+  };
+
+  const handleCancelConfirm = () => {
+    setSubscribed(false);
+    setShowCancelPopup(false);
+    showToast('구독이 해지됐어요');
+  };
+
+  const selectedPlan = plans.find(p => p.id === selected)!;
+
   return (
-    <div style={{ background: '#E8E6E0', minHeight: '100vh', display: 'flex', justifyContent: 'center', fontFamily: "'Malgun Gothic', sans-serif" }}>
-      <div style={{ background: '#F7F5EF', minHeight: '100vh', width: '100%', maxWidth: 430 }}>
+    <div style={{ background: '#f5f5f5', minHeight: '100vh', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ width: '100%', maxWidth: 390, background: '#F0F4EC', fontFamily: 'sans-serif' }}>
 
         {/* 헤더 */}
-        <div style={{ background: '#fff', padding: '12px 16px', borderBottom: '1px solid #eee', fontSize: 15, fontWeight: 700 }}>정기구독</div>
+        <div style={{ background: '#3B6D11', color: '#fff', padding: '16px' }}>
+          <div style={{ fontSize: 18, fontWeight: 700 }}>구독 플랜</div>
+          <div style={{ fontSize: 12, marginTop: 4, opacity: 0.8 }}>정기구독으로 더 저렴하게!</div>
+        </div>
 
-        <div style={{ padding: '14px 14px 80px' }}>
-
-          {/* 혜택 배너 */}
-          <div style={{ background: 'linear-gradient(135deg, #2C3E1A, #3B6D11)', borderRadius: 14, padding: '18px 16px', textAlign: 'center', marginBottom: 14 }}>
-            <div style={{ fontSize: 11, color: '#9FE1CB', marginBottom: 4 }}>구독하면</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#fff' }}>
-              매일 자동 예약 + <span style={{ color: '#C0DD97' }}>5% 할인</span>
-            </div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', marginTop: 4 }}>우선 픽업 슬롯 · 2주 일시정지 포함</div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 14 }}>
-              {[['🍱', '자동예약'], ['💰', '5% 할인'], ['⚡', '우선픽업']].map(([icon, label]) => (
-                <div key={label} style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 20 }}>{icon}</div>
-                  <div style={{ fontSize: 9, color: '#9FE1CB', marginTop: 3 }}>{label}</div>
-                </div>
-              ))}
-            </div>
+        {/* 토스트 */}
+        {toast && (
+          <div style={{ position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)', background: '#222', color: '#fff', padding: '12px 24px', borderRadius: 24, fontSize: 13, fontWeight: 600, zIndex: 200, whiteSpace: 'nowrap' }}>
+            {toast}
           </div>
+        )}
 
-          {/* 플랜 선택 */}
-          {(['weekly', 'monthly'] as const).map(plan => (
-            <div key={plan} onClick={() => setSelectedPlan(plan)}
-              style={{ border: `2px solid ${selectedPlan === plan ? '#3B6D11' : '#eee'}`, background: selectedPlan === plan ? '#EAF3DE' : '#fff', borderRadius: 14, padding: '14px 16px', marginBottom: 10, cursor: 'pointer', position: 'relative', transition: 'all .15s' }}>
-              {plans[plan].hot && (
-                <div style={{ position: 'absolute', top: -1, right: 14, background: '#3B6D11', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 10px', borderRadius: '0 0 8px 8px' }}>인기</div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+        {/* 현재 구독 상태 */}
+        {subscribed && (
+          <div style={{ margin: '16px 16px 0', background: '#E8F5D8', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#3B6D11' }}>✅ 구독 중 — {selectedPlan.name}</div>
+              <div style={{ fontSize: 12, color: '#5A8A2A', marginTop: 2 }}>매일 자동 예약되고 있어요</div>
+            </div>
+            <button onClick={() => setShowCancelPopup(true)} style={{ fontSize: 11, color: '#C0392B', background: 'none', border: '1px solid #C0392B', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>해지</button>
+          </div>
+        )}
+
+        {/* 플랜 선택 */}
+        <div style={{ margin: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#3B6D11', marginBottom: 4 }}>📋 플랜 선택</div>
+          {plans.map(plan => (
+            <div key={plan.id} onClick={() => setSelected(plan.id)}
+              style={{ background: '#fff', borderRadius: 12, padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', border: selected === plan.id ? `2px solid ${plan.color}` : '2px solid transparent', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 700 }}>{plans[plan].name}</div>
-                  <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{plans[plan].desc}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700 }}>{plan.name}</div>
+                    {plan.badge && (
+                      <span style={{ fontSize: 10, fontWeight: 700, background: plan.color, color: '#fff', padding: '2px 7px', borderRadius: 10 }}>{plan.badge}</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>{plan.desc}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#3B6D11' }}>{plans[plan].price}</div>
-                  <div style={{ fontSize: 10, color: '#aaa', textDecoration: 'line-through' }}>{plans[plan].original}</div>
+                  {'originalPrice' in plan && (
+                    <div style={{ fontSize: 11, color: '#bbb', textDecoration: 'line-through' }}>{(plan as any).originalPrice.toLocaleString()}원</div>
+                  )}
+                  <div style={{ fontSize: 16, fontWeight: 800, color: plan.color }}>{plan.price.toLocaleString()}원</div>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                {plans[plan].badges.map(b => (
-                  <span key={b} style={{ background: '#EAF3DE', color: '#3B6D11', fontSize: 9.5, fontWeight: 700, padding: '2px 8px', borderRadius: 7 }}>{b}</span>
-                ))}
-              </div>
-            </div>
-          ))}
-
-          {/* 메뉴 선택 방식 */}
-          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', padding: '13px 14px', marginBottom: 12 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>메뉴 선택 방식</div>
-            <label style={{ display: 'flex', gap: 8, alignItems: 'center', cursor: 'pointer', fontSize: 13, marginBottom: 6 }}>
-              <input type="radio" checked={menuType === 'auto'} onChange={() => setMenuType('auto')} style={{ accentColor: '#3B6D11' }} />
-              <div>
-                <div style={{ fontWeight: menuType === 'auto' ? 700 : 400 }}>자동 — 매일 편하게</div>
-                <div style={{ fontSize: 10, color: '#888' }}>관리자가 등록한 메뉴로 자동 예약</div>
-              </div>
-            </label>
-            <label style={{ display: 'flex', gap: 8, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
-              <input type="radio" checked={menuType === 'manual'} onChange={() => setMenuType('manual')} style={{ accentColor: '#3B6D11' }} />
-              <div>
-                <div style={{ fontWeight: menuType === 'manual' ? 700 : 400 }}>직접 선택 — 내가 고르기</div>
-                <div style={{ fontSize: 10, color: '#888' }}>달력에서 날짜별로 직접 선택</div>
-              </div>
-            </label>
-          </div>
-
-          {/* 픽업 시간 기본 설정 */}
-          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', padding: '13px 14px', marginBottom: 12 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>기본 픽업 시간</div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {['11:30', '12:00', '12:30', '13:00'].map(t => (
-                <div key={t} style={{ flex: 1, padding: '8px 0', border: t === '12:00' ? '1.5px solid #3B6D11' : '1.5px solid #eee', borderRadius: 18, fontSize: 11, textAlign: 'center', cursor: 'pointer', background: t === '12:00' ? '#3B6D11' : '#fff', color: t === '12:00' ? '#fff' : '#333', fontWeight: t === '12:00' ? 700 : 400 }}>
-                  {t}
+              {selected === plan.id && (
+                <div style={{ marginTop: 10, width: 20, height: 20, borderRadius: '50%', background: plan.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: 'auto' }}>
+                  <div style={{ color: '#fff', fontSize: 12 }}>✓</div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 시작 버튼 */}
-          <button onClick={() => router.push('/subscription/manage')}
-            style={{ width: '100%', padding: 14, background: '#3B6D11', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'Malgun Gothic', sans-serif", marginBottom: 6 }}>
-            {plans[selectedPlan].name} 시작하기
-          </button>
-          <div style={{ textAlign: 'center', fontSize: 11, color: '#aaa' }}>언제든 해지 가능 · 14일 무료 체험</div>
-
-        </div>
-
-        {/* 하단 탭바 */}
-        <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 430, background: '#fff', borderTop: '1px solid #eee', display: 'flex', padding: '6px 0 8px' }}>
-          {[['🏠','홈',false,'/'],[' 📅','메뉴달력',false,'/calendar'],['🔄','구독',true,'/subscription'],['👤','마이',false,'/mypage'],['☰','더보기',false,'/more']].map(([icon, label, active, path]) => (
-            <div key={String(label)} onClick={() => router.push(String(path))}
-              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, cursor: 'pointer' }}>
-              <div style={{ fontSize: 18 }}>{icon}</div>
-              <div style={{ fontSize: 9, color: active ? '#3B6D11' : '#B4B2A9', fontWeight: active ? 700 : 400 }}>{label}</div>
+              )}
             </div>
           ))}
         </div>
 
+        {/* 혜택 안내 */}
+        <div style={{ margin: '0 16px 16px', background: '#fff', borderRadius: 12, padding: '16px' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>🎁 구독 혜택</div>
+          {['매일 자동 예약 — 주문 걱정 없어요', '정기구독 할인 최대 15%', '픽업 시간 언제든 변경 가능', '구독 언제든지 해지 가능'].map((benefit, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: 13, color: '#555' }}>
+              <div style={{ color: '#3B6D11', fontWeight: 700 }}>✓</div>
+              {benefit}
+            </div>
+          ))}
+        </div>
+
+        {/* 구독 버튼 */}
+        {!subscribed && (
+          <div style={{ margin: '0 16px 16px' }}>
+            <button onClick={handleSubscribe} style={{ width: '100%', padding: '16px', borderRadius: 12, border: 'none', background: '#3B6D11', color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+              {selectedPlan.name} 구독 시작하기
+            </button>
+          </div>
+        )}
+
+        {/* 해지 확인 팝업 */}
+        {showCancelPopup && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+            <div style={{ background: '#fff', borderRadius: 16, padding: '24px', margin: '0 32px', textAlign: 'center' }}>
+              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>구독을 해지할까요?</div>
+              <div style={{ fontSize: 13, color: '#888', marginBottom: 6 }}>해지하면 자동 예약이 중단돼요</div>
+              <div style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>남은 기간은 계속 이용 가능해요</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => setShowCancelPopup(false)} style={{ flex: 1, padding: '12px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', fontSize: 14, cursor: 'pointer' }}>돌아가기</button>
+                <button onClick={handleCancelConfirm} style={{ flex: 1, padding: '12px', borderRadius: 8, border: 'none', background: '#C0392B', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>해지하기</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <BottomNav />
       </div>
     </div>
   );

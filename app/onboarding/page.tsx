@@ -1,119 +1,87 @@
 'use client';
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 const slides = [
   {
     emoji: '🍱',
-    bg: '#1A2E0A',
-    accent: '#9FE1CB',
-    title: '매일 11시\n건강한 한끼',
-    desc: '새벽 5시부터 준비하는 HACCP 인증\n안양·평촌 직장인 프리미엄 도시락',
+    title: '매일 새로운\n건강한 한 끼',
+    desc: '매일 아침 10시까지 주문하면\n점심 픽업 도시락이 준비돼요',
+    bg: '#3B6D11',
+  },
+  {
+    emoji: '⏰',
+    title: '원하는 시간에\n픽업하세요',
+    desc: '11:30 / 12:00 / 12:30 / 13:00\n4가지 픽업 시간 중 선택 가능해요',
+    bg: '#4A8A1A',
   },
   {
     emoji: '📅',
-    bg: '#0A2030',
-    accent: '#B5D4F4',
-    title: '한달치 메뉴\n미리 확인',
-    desc: '관리자 등록분까지 달력 미리보기\n구독 시 5% 할인!',
+    title: '정기구독으로\n5% 할인',
+    desc: '매일 자동 예약되고\n월 정기구독 시 5% 할인 혜택',
+    bg: '#2D5A0E',
   },
   {
-    emoji: '⚡',
-    bg: '#1A1A2E',
-    accent: '#C0DD97',
-    title: '3번 탭으로\n예약 완료',
-    desc: '메뉴 → 픽업시간 → 결제\nQR 코드 하나로 픽업!',
+    emoji: '🏢',
+    title: '기업 단체계약\nB2B 서비스',
+    desc: '10인 이상 단체 계약 시\n전담 매니저가 관리해드려요',
+    bg: '#1E4A08',
   },
 ];
 
-export default function Onboarding() {
+export default function OnboardingPage() {
   const router = useRouter();
   const [current, setCurrent] = useState(0);
-  const [animating, setAnimating] = useState(false);
 
-  const goNext = () => {
-    if (animating) return;
+  const handleNext = () => {
     if (current < slides.length - 1) {
-      setAnimating(true);
-      setTimeout(() => {
-        setCurrent(prev => prev + 1);
-        setAnimating(false);
-      }, 200);
+      setCurrent(current + 1);
     } else {
       router.push('/login');
     }
   };
 
-  const goSkip = () => router.push('/login');
+  const handleSkip = () => {
+    router.push('/login');
+  };
 
-  const s = slides[current];
+  const slide = slides[current];
 
   return (
-    <div style={{ background: '#E8E6E0', minHeight: '100vh', display: 'flex', justifyContent: 'center', fontFamily: "'Malgun Gothic', sans-serif" }}>
-      <div style={{ minHeight: '100vh', width: '100%', maxWidth: 430, background: s.bg, display: 'flex', flexDirection: 'column', transition: 'background .4s ease', position: 'relative', overflow: 'hidden' }}>
-
-        {/* 배경 원형 장식 */}
-        <div style={{ position: 'absolute', top: -80, right: -80, width: 260, height: 260, borderRadius: '50%', background: 'rgba(255,255,255,.03)' }}></div>
-        <div style={{ position: 'absolute', bottom: 120, left: -60, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,.03)' }}></div>
+    <div style={{ background: '#f5f5f5', minHeight: '100vh', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ width: '100%', maxWidth: 390, minHeight: '100vh', background: slide.bg, fontFamily: 'sans-serif', display: 'flex', flexDirection: 'column', transition: 'background 0.4s', position: 'relative' }}>
 
         {/* 건너뛰기 */}
-        <div style={{ padding: '52px 20px 0', display: 'flex', justifyContent: 'flex-end' }}>
-          {current < slides.length - 1 && (
-            <div onClick={goSkip} style={{ fontSize: 13, color: 'rgba(255,255,255,.4)', cursor: 'pointer', padding: '4px 8px' }}>건너뛰기</div>
-          )}
-        </div>
+        {current < slides.length - 1 && (
+          <div style={{ padding: '20px 24px', textAlign: 'right' }}>
+            <button onClick={handleSkip} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', fontSize: 14, cursor: 'pointer' }}>
+              건너뛰기
+            </button>
+          </div>
+        )}
 
         {/* 메인 콘텐츠 */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', opacity: animating ? 0 : 1, transform: animating ? 'translateY(10px)' : 'translateY(0)', transition: 'all .2s ease', textAlign: 'center' }}>
-
-          {/* 이모지 아이콘 */}
-          <div style={{ width: 100, height: 100, borderRadius: 28, background: 'rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, marginBottom: 32, border: '1px solid rgba(255,255,255,.1)' }}>
-            {s.emoji}
-          </div>
-
-          {/* 제목 */}
-          <div style={{ fontSize: 28, fontWeight: 900, color: '#fff', lineHeight: 1.4, marginBottom: 16, whiteSpace: 'pre-line' }}>
-            {s.title}
-          </div>
-
-          {/* 설명 */}
-          <div style={{ fontSize: 14, color: 'rgba(255,255,255,.6)', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
-            {s.desc}
-          </div>
-
-          {/* 강조 배지 */}
-          <div style={{ marginTop: 28, background: 'rgba(255,255,255,.1)', borderRadius: 20, padding: '6px 16px', border: `1px solid ${s.accent}33` }}>
-            <span style={{ fontSize: 12, color: s.accent, fontWeight: 600 }}>
-              {current === 0 ? '✓ HACCP 인증 · 친환경 식재료' : current === 1 ? '✓ 최대 60일 미리보기' : '✓ 평균 예약시간 23초'}
-            </span>
-          </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', textAlign: 'center' }}>
+          <div style={{ fontSize: 80, marginBottom: 32 }}>{slide.emoji}</div>
+          <div style={{ fontSize: 26, fontWeight: 900, color: '#fff', lineHeight: 1.4, marginBottom: 16, whiteSpace: 'pre-line' }}>{slide.title}</div>
+          <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, whiteSpace: 'pre-line' }}>{slide.desc}</div>
         </div>
 
         {/* 하단 */}
-        <div style={{ padding: '0 24px 52px' }}>
-
-          {/* 점 인디케이터 */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 24 }}>
+        <div style={{ padding: '32px 24px 48px' }}>
+          {/* 점 표시 */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 32 }}>
             {slides.map((_, i) => (
-              <div key={i} onClick={() => setCurrent(i)}
-                style={{ height: 5, width: i === current ? 24 : 5, borderRadius: 3, background: i === current ? s.accent : 'rgba(255,255,255,.2)', transition: 'all .3s ease', cursor: 'pointer' }}>
-              </div>
+              <div key={i} style={{ width: i === current ? 24 : 8, height: 8, borderRadius: 4, background: i === current ? '#fff' : 'rgba(255,255,255,0.3)', transition: 'width 0.3s' }} />
             ))}
           </div>
 
           {/* 버튼 */}
-          <button onClick={goNext}
-            style={{ width: '100%', padding: '15px', background: s.accent, color: '#1A1A1A', border: 'none', borderRadius: 14, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: "'Malgun Gothic', sans-serif', transition: 'all .2s'" }}>
-            {current < slides.length - 1 ? '다음' : '튼튼밀 시작하기 🍱'}
+          <button
+            onClick={handleNext}
+            style={{ width: '100%', padding: '18px', borderRadius: 14, border: 'none', background: '#fff', color: slide.bg, fontSize: 16, fontWeight: 800, cursor: 'pointer' }}>
+            {current < slides.length - 1 ? '다음 →' : '시작하기 🚀'}
           </button>
-
-          {/* 로그인 이미 있는 경우 */}
-          {current === slides.length - 1 && (
-            <div onClick={goSkip} style={{ textAlign: 'center', marginTop: 14, fontSize: 13, color: 'rgba(255,255,255,.4)', cursor: 'pointer' }}>
-              이미 계정이 있어요
-            </div>
-          )}
         </div>
 
       </div>

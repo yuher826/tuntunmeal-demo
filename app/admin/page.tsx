@@ -1,116 +1,79 @@
 'use client';
-
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import BottomNav from '../components/BottomNav';
 
-export default function AdminDash() {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState(0);
+const initialMenus = [
+  { id: 1, name: '불고기 덮밥', price: 9500, stock: 50, soldOut: false },
+  { id: 2, name: '닭가슴살 샐러드', price: 8500, stock: 30, soldOut: false },
+  { id: 3, name: '된장국 정식', price: 8000, stock: 20, soldOut: true },
+];
 
-  const kpis = [
-    { val: '47', label: '총 주문', color: '#1A1A1A' },
-    { val: '31', label: '픽업 완료', color: '#3B6D11' },
-    { val: '16', label: '대기중', color: '#EF9F27' },
-    { val: '2', label: '취소', color: '#E24B4A' },
-  ];
+export default function AdminPage() {
+  const [menus, setMenus] = useState(initialMenus);
+  const [toast, setToast] = useState('');
 
-  const timeSlots = [
-    { time: '11:30', done: 12, total: 12, pct: 100 },
-    { time: '12:00', done: 11, total: 14, pct: 79 },
-    { time: '12:30', done: 8, total: 14, pct: 57 },
-    { time: '13:00', done: 0, total: 7, pct: 0 },
-  ];
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 2500);
+  };
 
-  const orders = [
-    { id: 'TT-0142', name: '김직장', menu: '닭가슴살 샐러드', time: '13:00', status: '대기', statusBg: '#FFF3E0', statusColor: '#EF9F27' },
-    { id: 'TT-0141', name: '이오피스', menu: '불고기 덮밥', time: '12:30', status: '완료', statusBg: '#EAF3DE', statusColor: '#3B6D11' },
-    { id: 'TT-0140', name: '박점심', menu: '닭가슴살 샐러드', time: '12:30', status: '완료', statusBg: '#EAF3DE', statusColor: '#3B6D11' },
-    { id: 'TT-0139', name: '최밥심', menu: '불고기 덮밥', time: '12:00', status: '완료', statusBg: '#EAF3DE', statusColor: '#3B6D11' },
-  ];
+  const toggleSoldOut = (id: number) => {
+    setMenus(menus.map(m => {
+      if (m.id === id) {
+        const next = !m.soldOut;
+        showToast(next ? `${m.name} 품절 처리됐어요` : `${m.name} 품절 해제됐어요 ✅`);
+        return { ...m, soldOut: next };
+      }
+      return m;
+    }));
+  };
 
   return (
-    <div style={{ background: '#E8E6E0', minHeight: '100vh', display: 'flex', justifyContent: 'center', fontFamily: "'Malgun Gothic', sans-serif" }}>
-      <div style={{ background: '#F2F2F2', minHeight: '100vh', width: '100%', maxWidth: 430 }}>
+    <div style={{ background: '#f5f5f5', minHeight: '100vh', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ width: '100%', maxWidth: 390, background: '#F0F4EC', fontFamily: 'sans-serif' }}>
 
         {/* 헤더 */}
-        <div style={{ background: '#3B6D11', padding: '10px 14px 12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: 10, color: '#9FE1CB' }}>관리자 대시보드</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>오늘 운영 현황</div>
-            </div>
-            <div style={{ background: '#2C5610', borderRadius: 8, padding: '4px 10px', fontSize: 10, color: '#C0DD97', fontWeight: 600 }}>2026.04.27</div>
-          </div>
+        <div style={{ background: '#3B6D11', color: '#fff', padding: '16px' }}>
+          <div style={{ fontSize: 18, fontWeight: 700 }}>관리자 — 메뉴 관리</div>
+          <div style={{ fontSize: 12, marginTop: 4, opacity: 0.8 }}>오늘 메뉴 품절 처리</div>
         </div>
 
-        <div style={{ padding: '10px 12px 80px' }}>
-
-          {/* KPI 4개 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
-            {kpis.map(k => (
-              <div key={k.label} style={{ background: '#fff', borderRadius: 10, padding: '12px', textAlign: 'center', border: '1px solid #eee' }}>
-                <div style={{ fontSize: 24, fontWeight: 700, color: k.color }}>{k.val}</div>
-                <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>{k.label}</div>
-              </div>
-            ))}
+        {/* 토스트 */}
+        {toast && (
+          <div style={{ position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)', background: '#222', color: '#fff', padding: '12px 24px', borderRadius: 24, fontSize: 13, fontWeight: 600, zIndex: 200, whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
+            {toast}
           </div>
+        )}
 
-          {/* 오늘 매출 */}
-          <div style={{ background: '#1A1A1A', borderRadius: 10, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <span style={{ fontSize: 12, color: '#888' }}>오늘 매출</span>
-            <span style={{ fontSize: 18, fontWeight: 700, color: '#9FE1CB' }}>427,500원</span>
-          </div>
-
-          {/* 시간대별 현황 */}
-          <div style={{ background: '#fff', borderRadius: 10, border: '1px solid #eee', padding: '12px 14px', marginBottom: 10 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 8 }}>시간대별 픽업 현황</div>
-            {timeSlots.map(s => (
-              <div key={s.time} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 11, color: '#888', width: 36 }}>{s.time}</span>
-                <div style={{ flex: 1, background: '#eee', height: 16, borderRadius: 4, overflow: 'hidden' }}>
-                  {s.pct > 0 && (
-                    <div style={{ background: s.pct === 100 ? '#3B6D11' : '#EF9F27', width: `${s.pct}%`, height: '100%', display: 'flex', alignItems: 'center', padding: '0 6px' }}>
-                      <span style={{ fontSize: 9, color: '#fff', fontWeight: 600 }}>{s.done}/{s.total}</span>
-                    </div>
-                  )}
+        {/* 메뉴 목록 */}
+        <div style={{ margin: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {menus.map(menu => (
+            <div key={menu.id} style={{ background: '#fff', borderRadius: 12, padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', opacity: menu.soldOut ? 0.6 : 1 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700 }}>{menu.name}</div>
+                    {menu.soldOut && (
+                      <span style={{ fontSize: 10, fontWeight: 700, background: '#FFE8E8', color: '#C0392B', padding: '2px 7px', borderRadius: 10 }}>품절</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>{menu.price.toLocaleString()}원 · 잔여 {menu.stock}개</div>
                 </div>
-                {s.pct === 0 && <span style={{ fontSize: 9, color: '#aaa' }}>0/{s.total}</span>}
+                <button
+                  onClick={() => toggleSoldOut(menu.id)}
+                  style={{
+                    padding: '8px 14px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                    background: menu.soldOut ? '#E8F5D8' : '#FFE8E8',
+                    color: menu.soldOut ? '#3B6D11' : '#C0392B',
+                  }}>
+                  {menu.soldOut ? '품절해제' : '품절처리'}
+                </button>
               </div>
-            ))}
-          </div>
-
-          {/* 주문 목록 */}
-          <div style={{ background: '#fff', borderRadius: 10, border: '1px solid #eee', overflow: 'hidden', marginBottom: 10 }}>
-            <div style={{ padding: '10px 14px', background: '#F5F3ED', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 11, fontWeight: 700 }}>주문 목록</span>
-              <button onClick={() => router.push('/admin/qr')}
-                style={{ background: '#3B6D11', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: "'Malgun Gothic', sans-serif" }}>
-                📷 QR 스캔
-              </button>
             </div>
-            {orders.map((o, i) => (
-              <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', borderBottom: i < orders.length - 1 ? '1px solid #f0f0f0' : 'none', cursor: 'pointer' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600 }}>{o.id} {o.name}</div>
-                  <div style={{ fontSize: 10, color: '#888', marginTop: 1 }}>{o.menu} · {o.time}</div>
-                </div>
-                <span style={{ background: o.statusBg, color: o.statusColor, fontSize: 10, fontWeight: 700, padding: '2px 9px', borderRadius: 8 }}>{o.status}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* 하단 버튼 */}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => router.push('/admin/menu')}
-              style={{ flex: 1, background: '#3B6D11', color: '#fff', border: 'none', borderRadius: 11, padding: '13px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: "'Malgun Gothic', sans-serif" }}>
-              🍱 메뉴 등록
-            </button>
-            <button style={{ flex: 1, background: '#fff', color: '#3B6D11', border: '1.5px solid #3B6D11', borderRadius: 11, padding: '13px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Malgun Gothic', sans-serif" }}>
-              📊 정산 내역
-            </button>
-          </div>
-
+          ))}
         </div>
+
+        <BottomNav />
       </div>
     </div>
   );

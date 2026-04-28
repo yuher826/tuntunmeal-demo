@@ -1,8 +1,10 @@
 'use client';
-
+import BottomNav from './components/BottomNav';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const router = useRouter();
   const [timeLeft, setTimeLeft] = useState('');
   const [selectedMenu, setSelectedMenu] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -29,22 +31,19 @@ export default function Home() {
   ];
 
   const times = ['11:30', '12:00', '12:30', '13:00'];
-  const canOrder = selectedMenu !== null && selectedTime !== null;
 
   return (
-    <div style={{ background: '#E8E6E0', minHeight: '100vh', display: 'flex', justifyContent: 'center', fontFamily: "'Malgun Gothic', sans-serif" }}>
-      <div style={{ background: '#F7F5EF', minHeight: '100vh', width: '100%', maxWidth: 430, position: 'relative' }}>
+    <div style={{ background: '#f5f5f5', minHeight: '100vh', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ width: '100%', maxWidth: 390, background: '#F0F4EC', fontFamily: 'sans-serif' }}>
 
         {/* 헤더 */}
-        <div style={{ background: '#1A1A1A', padding: '10px 16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>튼튼밀</div>
-              <div style={{ fontSize: 9, color: '#9FE1CB', letterSpacing: 2 }}>TUNTUNMEAL</div>
-            </div>
-            <div style={{ background: '#3B6D11', borderRadius: 14, padding: '4px 12px', fontSize: 10, fontWeight: 700, color: '#C0DD97' }}>
-              AM 5:00 부터
-            </div>
+        <div style={{ background: '#2C3E1A', padding: '16px 16px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: 1 }}>튼튼밀</div>
+            <div style={{ fontSize: 9, color: '#9FE1CB', letterSpacing: 2 }}>TUNTUNMEAL</div>
+          </div>
+          <div style={{ background: '#3B6D11', borderRadius: 14, padding: '4px 12px', fontSize: 10, fontWeight: 700, color: '#fff' }}>
+            AM 5:00 부터
           </div>
         </div>
 
@@ -58,19 +57,21 @@ export default function Home() {
         <div style={{ padding: '14px 14px 8px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <span style={{ fontSize: 14, fontWeight: 700 }}>오늘의 메뉴</span>
-            <span style={{ background: '#EAF3DE', color: '#3B6D11', fontSize: 10, fontWeight: 700, padding: '2px 10px', borderRadius: 8 }}>2가지 선택</span>
+            <span style={{ background: '#EAF3DE', color: '#3B6D11', fontSize: 10, fontWeight: 700, padding: '2px 10px', borderRadius: 10 }}>2가지 선택</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
             {menus.map(menu => (
               <div key={menu.id} onClick={() => setSelectedMenu(menu.id)}
-                style={{ background: '#fff', border: `2px solid ${selectedMenu === menu.id ? '#3B6D11' : '#eee'}`, borderRadius: 12, overflow: 'hidden', cursor: 'pointer' }}>
-                <div style={{ height: 70, background: '#EAF3DE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>{menu.emoji}</div>
+                style={{ background: '#fff', border: `2px solid ${selectedMenu === menu.id ? '#3B6D11' : '#eee'}`, borderRadius: 12, cursor: 'pointer', overflow: 'hidden' }}>
+                <div style={{ height: 70, background: '#EAF3DE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>
+                  {menu.emoji}
+                </div>
                 <div style={{ padding: '8px 10px 10px' }}>
                   <div style={{ fontSize: 12, fontWeight: 700 }}>{menu.name}</div>
                   <div style={{ fontSize: 10, color: '#888' }}>{menu.kcal}</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#3B6D11', marginTop: 3 }}>{menu.price}</div>
                   {selectedMenu === menu.id && (
-                    <div style={{ background: '#3B6D11', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: 2, borderRadius: 4, marginTop: 4 }}>✓ 선택됨</div>
+                    <div style={{ background: '#3B6D11', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', borderRadius: 4, marginTop: 4, padding: '2px 0' }}>선택됨 ✓</div>
                   )}
                 </div>
               </div>
@@ -78,60 +79,62 @@ export default function Home() {
           </div>
 
           {/* 픽업 시간 */}
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>픽업 시간</div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-            {times.map(t => (
-              <div key={t} onClick={() => setSelectedTime(t)}
-                style={{ padding: '8px 14px', border: `1.5px solid ${selectedTime === t ? '#3B6D11' : '#ddd'}`, borderRadius: 20, fontSize: 12, cursor: 'pointer', background: selectedTime === t ? '#3B6D11' : '#fff', color: selectedTime === t ? '#fff' : '#333', fontWeight: selectedTime === t ? 700 : 400 }}>
-                {t}
-              </div>
-            ))}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>픽업 시간</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {times.map(t => (
+                <button key={t} onClick={() => setSelectedTime(t)}
+                  style={{ flex: 1, padding: '10px 0', borderRadius: 8, border: selectedTime === t ? '2px solid #3B6D11' : '1px solid #ddd', background: selectedTime === t ? '#E8F5D8' : '#fff', color: selectedTime === t ? '#3B6D11' : '#555', fontSize: 12, fontWeight: selectedTime === t ? 700 : 400, cursor: 'pointer' }}>
+                  {t}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* 주문 버튼 */}
-          <button disabled={!canOrder}
-            style={{ width: '100%', padding: 14, border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: canOrder ? 'pointer' : 'default', background: canOrder ? '#3B6D11' : '#B4B2A9', color: '#fff', marginBottom: 10 }}>
-            {canOrder ? `${menus.find(m => m.id === selectedMenu)?.name} · ${selectedTime} 예약하기 →` : '메뉴와 시간을 선택하세요'}
+          <button
+            onClick={() => { if (selectedMenu && selectedTime) router.push('/payment'); }}
+            disabled={!selectedMenu || !selectedTime}
+            style={{ width: '100%', padding: '16px', borderRadius: 12, border: 'none', background: selectedMenu && selectedTime ? '#3B6D11' : '#ddd', color: '#fff', fontSize: 15, fontWeight: 800, cursor: selectedMenu && selectedTime ? 'pointer' : 'default', marginBottom: 14 }}>
+            {selectedMenu && selectedTime ? '주문하기 →' : '메뉴와 시간을 선택하세요'}
           </button>
 
-          {/* 바로가기 카드 */}
-          <div style={{ background: '#EAF3DE', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', border: '1px solid #C0DD97', marginBottom: 6 }}>
-            <div style={{ width: 28, height: 28, background: '#3B6D11', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>📅</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#27500A' }}>메뉴 달력 미리보기</div>
-              <div style={{ fontSize: 9, color: '#639922' }}>내일~이번달 전체 메뉴 확인</div>
+          {/* 메뉴 달력 */}
+          <div onClick={() => router.push('/calendar')} style={{ background: '#fff', borderRadius: 12, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, cursor: 'pointer' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 28, height: 28, background: '#EAF3DE', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>📅</div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700 }}>메뉴 달력 미리보기</div>
+                <div style={{ fontSize: 10, color: '#888' }}>내일~이번 달 전체 메뉴 확인</div>
+              </div>
             </div>
-            <div style={{ color: '#3B6D11' }}>›</div>
+            <span style={{ color: '#ccc' }}>›</span>
           </div>
-          <div style={{ background: '#fff', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', border: '1px solid #eee', marginBottom: 6 }}>
-            <div style={{ width: 28, height: 28, background: '#27500A', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🔄</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, fontWeight: 700 }}>정기구독</div>
-              <div style={{ fontSize: 9, color: '#888' }}>매일 자동 예약 · 5% 할인</div>
+
+          <div onClick={() => router.push('/subscription')} style={{ background: '#fff', borderRadius: 12, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, cursor: 'pointer' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 28, height: 28, background: '#EAF3DE', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>📋</div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700 }}>정기구독</div>
+                <div style={{ fontSize: 10, color: '#888' }}>매일 자동 예약 · 5% 할인</div>
+              </div>
             </div>
-            <span style={{ background: '#EAF3DE', color: '#3B6D11', fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 7 }}>5%↓</span>
+            <span style={{ color: '#ccc' }}>›</span>
           </div>
-          <div style={{ background: '#fff', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', border: '1px solid #eee', marginBottom: 6 }}>
-            <div style={{ width: 28, height: 28, background: '#185FA5', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🏢</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, fontWeight: 700 }}>기업 단체계약 B2B</div>
-              <div style={{ fontSize: 9, color: '#888' }}>10인 이상 · 더보기 탭</div>
+
+          <div onClick={() => router.push('/b2b')} style={{ background: '#fff', borderRadius: 12, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 28, height: 28, background: '#185FA5', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🏢</div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700 }}>기업 단체계약 B2B</div>
+                <div style={{ fontSize: 10, color: '#888' }}>10인 이상 · 매니저 담당</div>
+              </div>
             </div>
-            <div style={{ color: '#aaa' }}>›</div>
+            <span style={{ color: '#ccc' }}>›</span>
           </div>
         </div>
 
-        {/* 하단 탭바 */}
-        <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 430, background: '#fff', borderTop: '1px solid #eee', display: 'flex', padding: '6px 0 8px' }}>
-          {[['🏠','홈'], ['📅','메뉴달력'], ['🔄','구독'], ['👤','마이'], ['☰','더보기']].map(([icon, label], i) => (
-            <div key={label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, cursor: 'pointer' }}>
-              <div style={{ fontSize: 18 }}>{icon}</div>
-              <div style={{ fontSize: 9, color: i === 0 ? '#3B6D11' : '#B4B2A9', fontWeight: i === 0 ? 700 : 400 }}>{label}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ height: 60 }} />
-
+        <BottomNav />
       </div>
     </div>
   );
