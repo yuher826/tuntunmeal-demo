@@ -1,128 +1,156 @@
 'use client';
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import BottomNav from '../components/BottomNav';
 
-export default function B2B() {
+export default function B2BPage() {
   const router = useRouter();
-  const [company, setCompany] = useState('');
-  const [manager, setManager] = useState('');
-  const [phone, setPhone] = useState('');
-  const [bizNum, setBizNum] = useState('');
-  const [people, setPeople] = useState<string | null>(null);
+  const [form, setForm] = useState({ company: '', name: '', phone: '', email: '', count: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
+  const [toast, setToast] = useState('');
 
-  const inp: React.CSSProperties = {
-    width: '100%', background: '#F5F3ED', border: '1px solid #E8E6DE',
-    borderRadius: 8, padding: '11px 12px', fontSize: 13,
-    fontFamily: "'Malgun Gothic', sans-serif", outline: 'none'
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 2500);
   };
 
   const handleSubmit = () => {
-    if (!company || !manager || !phone || !people) return;
+    if (!form.company || !form.name || !form.phone) {
+      showToast('회사명, 담당자명, 연락처는 필수예요!');
+      return;
+    }
     setSubmitted(true);
   };
 
-  if (submitted) {
-    return (
-      <div style={{ background: '#E8E6E0', minHeight: '100vh', display: 'flex', justifyContent: 'center', fontFamily: "'Malgun Gothic', sans-serif" }}>
-        <div style={{ background: '#F7F5EF', minHeight: '100vh', width: '100%', maxWidth: 430, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 28px', textAlign: 'center' }}>
-          <div style={{ fontSize: 56, marginBottom: 16 }}>✅</div>
-          <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>상담 신청 완료!</div>
-          <div style={{ fontSize: 13, color: '#888', lineHeight: 1.8, marginBottom: 32 }}>
-            영업일 1~2일 내 담당자가 연락드립니다.<br />
-            <span style={{ color: '#3B6D11', fontWeight: 600 }}>{company}</span> 감사합니다 😊
-          </div>
-          <button onClick={() => router.push('/')}
-            style={{ background: '#3B6D11', color: '#fff', border: 'none', borderRadius: 12, padding: '14px 32px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'Malgun Gothic', sans-serif" }}>
-            홈으로 돌아가기
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ background: '#E8E6E0', minHeight: '100vh', display: 'flex', justifyContent: 'center', fontFamily: "'Malgun Gothic', sans-serif" }}>
-      <div style={{ background: '#F7F5EF', minHeight: '100vh', width: '100%', maxWidth: 430 }}>
+    <div style={{ background: '#f5f5f5', minHeight: '100vh', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ width: '100%', maxWidth: 390, background: '#F0F4EC', fontFamily: 'sans-serif' }}>
 
         {/* 헤더 */}
-        <div style={{ background: '#fff', padding: '12px 14px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div onClick={() => router.push('/more')} style={{ width: 30, height: 30, background: '#f5f5f5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14 }}>←</div>
-          <span style={{ fontSize: 14, fontWeight: 700 }}>기업 단체계약 신청</span>
+        <div style={{ background: '#185FA5', color: '#fff', padding: '16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={() => router.back()} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', padding: 0 }}>←</button>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700 }}>기업 단체계약 B2B</div>
+            <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>10인 이상 단체 전용 서비스</div>
+          </div>
         </div>
 
-        <div style={{ padding: '14px 14px 80px' }}>
+        {/* 토스트 */}
+        {toast && (
+          <div style={{ position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)', background: '#222', color: '#fff', padding: '12px 24px', borderRadius: 24, fontSize: 13, fontWeight: 600, zIndex: 200, whiteSpace: 'nowrap' }}>
+            {toast}
+          </div>
+        )}
 
-          {/* 혜택 배너 */}
-          <div style={{ background: 'linear-gradient(135deg, #0C3A7C, #185FA5)', borderRadius: 14, padding: '18px 16px', marginBottom: 16, color: '#fff' }}>
-            <div style={{ fontSize: 11, color: '#B5D4F4', marginBottom: 4 }}>TUNTUNMEAL B2B</div>
-            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>임직원 식사를 한번에</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', marginBottom: 14 }}>10인 이상 · 월말 정산 · 세금계산서 발행</div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {[['📋', '세금계산서'], ['💳', '월말 정산'], ['🚀', '우선 픽업'], ['📊', '식사 통계']].map(([icon, label]) => (
-                <div key={label} style={{ flex: 1, background: 'rgba(255,255,255,.15)', borderRadius: 8, padding: '8px 4px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 16 }}>{icon}</div>
-                  <div style={{ fontSize: 8.5, color: '#B5D4F4', marginTop: 3 }}>{label}</div>
+        {!submitted ? (
+          <div style={{ padding: '16px' }}>
+
+            {/* 혜택 안내 */}
+            <div style={{ background: '#EBF5FB', borderRadius: 12, padding: '16px', marginBottom: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#185FA5', marginBottom: 10 }}>🏢 B2B 단체계약 혜택</div>
+              {[
+                { icon: '💰', title: '10% 이상 할인', desc: '인원수에 따라 최대 15% 할인' },
+                { icon: '👨‍💼', title: '전담 매니저 배정', desc: '전용 담당자가 모든 것을 관리' },
+                { icon: '📅', title: '메뉴 사전 협의', desc: '회사 맞춤 메뉴 구성 가능' },
+                { icon: '🧾', title: '세금계산서 발행', desc: '법인 경비 처리 가능' },
+                { icon: '🚚', title: '정시 납품 보장', desc: '매일 지정 시간 정확히 납품' },
+              ].map((b, i) => (
+                <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
+                  <span style={{ fontSize: 18 }}>{b.icon}</span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>{b.title}</div>
+                    <div style={{ fontSize: 11, color: '#666' }}>{b.desc}</div>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
 
-          {/* 폼 */}
-          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', padding: '14px', marginBottom: 10 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#888', marginBottom: 12 }}>기업 정보</div>
-
-            <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 11, color: '#888', marginBottom: 4 }}>회사명 *</div>
-              <input value={company} onChange={e => setCompany(e.target.value)} style={{ ...inp }} placeholder="(주)안양테크" />
-            </div>
-
-            <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 11, color: '#888', marginBottom: 4 }}>사업자등록번호</div>
-              <input value={bizNum} onChange={e => setBizNum(e.target.value)} style={{ ...inp }} placeholder="000-00-00000" />
-            </div>
-
-            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: '#888', marginBottom: 4 }}>담당자명 *</div>
-                <input value={manager} onChange={e => setManager(e.target.value)} style={{ ...inp }} placeholder="김담당" />
-              </div>
-              <div style={{ flex: 1.4 }}>
-                <div style={{ fontSize: 11, color: '#888', marginBottom: 4 }}>연락처 *</div>
-                <input value={phone} onChange={e => setPhone(e.target.value)} style={{ ...inp }} placeholder="010-xxxx-xxxx" />
-              </div>
-            </div>
-          </div>
-
-          {/* 예상 인원 */}
-          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', padding: '14px', marginBottom: 10 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#888', marginBottom: 10 }}>예상 인원 *</div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {[['10~30명', '소규모'], ['31~100명', '중규모'], ['101명↑', '대규모']].map(([label, sub]) => (
-                <div key={label} onClick={() => setPeople(label)}
-                  style={{ flex: 1, border: `1.5px solid ${people === label ? '#185FA5' : '#eee'}`, background: people === label ? '#E6F1FB' : '#fff', borderRadius: 10, padding: '10px 6px', textAlign: 'center', cursor: 'pointer', transition: 'all .15s' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: people === label ? '#185FA5' : '#333' }}>{label}</div>
-                  <div style={{ fontSize: 9, color: people === label ? '#185FA5' : '#aaa', marginTop: 2 }}>{sub}</div>
+            {/* 요금 안내 */}
+            <div style={{ background: '#fff', borderRadius: 12, padding: '16px', marginBottom: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>💳 요금 안내</div>
+              {[
+                { range: '10~19인', price: '인당 8,500원', discount: '10% 할인', color: '#3B6D11' },
+                { range: '20~49인', price: '인당 8,075원', discount: '15% 할인', color: '#185FA5' },
+                { range: '50인 이상', price: '별도 협의', discount: '최대 혜택', color: '#8e44ad' },
+              ].map((p, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: i < 2 ? '1px solid #f0f0f0' : 'none' }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>{p.range}</div>
+                    <div style={{ fontSize: 12, color: '#888' }}>{p.price}</div>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 10, background: `${p.color}20`, color: p.color }}>{p.discount}</span>
                 </div>
               ))}
             </div>
+
+            {/* 문의 폼 */}
+            <div style={{ background: '#fff', borderRadius: 12, padding: '16px', marginBottom: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>📝 계약 문의</div>
+              {[
+                { label: '회사명 *', key: 'company', placeholder: '예) (주)튼튼밀' },
+                { label: '담당자명 *', key: 'name', placeholder: '예) 홍길동' },
+                { label: '연락처 *', key: 'phone', placeholder: '예) 010-1234-5678' },
+                { label: '이메일', key: 'email', placeholder: '예) hong@company.com' },
+                { label: '예상 인원', key: 'count', placeholder: '예) 30명' },
+              ].map(f => (
+                <div key={f.key} style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, color: '#555', marginBottom: 4, fontWeight: 600 }}>{f.label}</div>
+                  <input
+                    value={(form as any)[f.key]}
+                    onChange={e => setForm({ ...form, [f.key]: e.target.value })}
+                    placeholder={f.placeholder}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' }} />
+                </div>
+              ))}
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 11, color: '#555', marginBottom: 4, fontWeight: 600 }}>추가 문의사항</div>
+                <textarea
+                  value={form.message}
+                  onChange={e => setForm({ ...form, message: e.target.value })}
+                  placeholder="궁금한 점을 자유롭게 적어주세요"
+                  rows={3}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box', resize: 'none' }} />
+              </div>
+              <button onClick={handleSubmit}
+                style={{ width: '100%', padding: '16px', borderRadius: 12, border: 'none', background: '#185FA5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                문의 보내기 →
+              </button>
+            </div>
+
+            {/* 전화 문의 */}
+            <div style={{ background: '#fff', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>📞 전화 문의</div>
+                <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>평일 09:00 ~ 17:00</div>
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#185FA5' }}>031-000-0000</div>
+            </div>
+
           </div>
+        ) : (
 
-          {/* 요청사항 */}
-          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', padding: '14px', marginBottom: 14 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#888', marginBottom: 6 }}>요청사항 (선택)</div>
-            <textarea style={{ ...inp, height: 80, resize: 'none' as const, verticalAlign: 'top' }} placeholder="픽업 장소, 특이사항 등을 자유롭게 적어주세요" />
+          /* 제출 완료 화면 */
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 24px', textAlign: 'center' }}>
+            <div style={{ fontSize: 64, marginBottom: 20 }}>✅</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#185FA5', marginBottom: 8 }}>문의가 접수됐어요!</div>
+            <div style={{ fontSize: 14, color: '#888', lineHeight: 1.7, marginBottom: 32 }}>
+              담당자가 확인 후<br />1~2 영업일 내에 연락드릴게요 😊
+            </div>
+            <div style={{ background: '#EBF5FB', borderRadius: 12, padding: '16px', width: '100%', marginBottom: 24, textAlign: 'left' }}>
+              <div style={{ fontSize: 12, color: '#185FA5', fontWeight: 700, marginBottom: 8 }}>접수 내용</div>
+              <div style={{ fontSize: 13, color: '#333' }}>회사명: {form.company}</div>
+              <div style={{ fontSize: 13, color: '#333' }}>담당자: {form.name}</div>
+              <div style={{ fontSize: 13, color: '#333' }}>연락처: {form.phone}</div>
+              {form.count && <div style={{ fontSize: 13, color: '#333' }}>예상인원: {form.count}</div>}
+            </div>
+            <button onClick={() => router.push('/')}
+              style={{ width: '100%', padding: '16px', borderRadius: 12, border: 'none', background: '#185FA5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+              홈으로 돌아가기
+            </button>
           </div>
+        )}
 
-          {/* 신청 버튼 */}
-          <button onClick={handleSubmit}
-            style={{ width: '100%', padding: 14, background: company && manager && phone && people ? '#185FA5' : '#B4B2A9', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: company && manager && phone && people ? 'pointer' : 'default', fontFamily: "'Malgun Gothic', sans-serif", marginBottom: 8, transition: 'background .2s' }}>
-            계약 상담 신청하기
-          </button>
-          <div style={{ textAlign: 'center', fontSize: 11, color: '#aaa' }}>영업일 1~2일 내 담당자 연락 · 무료 컨설팅</div>
-
-        </div>
+        <BottomNav />
       </div>
     </div>
   );
