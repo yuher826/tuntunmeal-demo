@@ -1,397 +1,439 @@
 'use client';
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 type Tab = 'menu' | 'order' | 'member' | 'pickup' | 'stats' | 'notice';
 
-const initialMenus = [
-  { id: 1, name: '불고기 덮밥', price: 9500, kcal: 520, stock: 50, soldOut: false },
-  { id: 2, name: '닭가슴살 샐러드', price: 8500, kcal: 380, stock: 30, soldOut: false },
-  { id: 3, name: '된장국 정식', price: 8000, kcal: 450, stock: 20, soldOut: true },
+const tabs = [
+  { id: 'menu' as Tab, label: '메뉴관리', icon: '🍱' },
+  { id: 'order' as Tab, label: '주문관리', icon: '📋' },
+  { id: 'member' as Tab, label: '회원관리', icon: '👥' },
+  { id: 'pickup' as Tab, label: '픽업관리', icon: '📦' },
+  { id: 'stats' as Tab, label: '매출통계', icon: '📊' },
+  { id: 'notice' as Tab, label: '공지·이벤트', icon: '📢' },
 ];
 
-const initialOrders = [
-  { id: 1, name: '홍길동', menu: '불고기 덮밥', time: '12:00', status: '예약완료', price: 9500 },
-  { id: 2, name: '김철수', menu: '닭가슴살 샐러드', time: '12:30', status: '예약완료', price: 8500 },
-  { id: 3, name: '이영희', menu: '불고기 덮밥', time: '11:30', status: '픽업완료', price: 9500 },
-  { id: 4, name: '박민준', menu: '된장국 정식', time: '13:00', status: '취소됨', price: 8000 },
-];
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '8px 10px', borderRadius: 8,
+  border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box',
+};
 
-const initialMembers = [
-  { id: 1, name: '홍길동', phone: '010-1234-5678', sub: '주간구독', orders: 12, last: '4/23' },
-  { id: 2, name: '김철수', phone: '010-2345-6789', sub: '없음', orders: 3, last: '4/22' },
-  { id: 3, name: '이영희', phone: '010-3456-7890', sub: '월간구독', orders: 28, last: '4/23' },
-  { id: 4, name: '박민준', phone: '010-4567-8901', sub: '없음', orders: 1, last: '4/20' },
-];
-
-const UNDO_SECONDS = 7;
+type Menu = { id: number; name: string; price: number; kcal: number; stock: number; sold_out: boolean; image: string };
+type Order = { id: number; member_name: string; menu_name: string; pickup_time: string; status: string; price: number };
+type Member = { id: number; name: string; phone: string; subscription: string; total_orders: number; last_order: string };
+type Notice = { id: number; type: string; title: string; date: string; published: boolean };
 
 export default function AdminPage() {
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>('menu');
-  const [menus, setMenus] = useState(initialMenus);
-  const [orders, setOrders] = useState(initialOrders);
-  const [toast, setToast] = useState('');
-  const [undoInfo, setUndoInfo] = useState<{ id: number; prevStatus: string; countdown: number } | null>(null);
-  const [undoTimer, setUndoTimer] = useState<ReturnType<typeof setInterval> | null>(null);
+
+  // 메뉴
+  const [menus, setMenus] = useState<Menu[]>([]);
   const [showMenuForm, setShowMenuForm] = useState(false);
-  const [newMenu, setNewMenu] = useState({ name: '', price: '', kcal: '', stock: '' });
-  const [notice, setNotice] = useState('');
-  const [notices, setNotices] = useState(['오늘 메뉴: 불고기 덮밥 / 닭가슴살 샐러드', '4/30(목) 메뉴 등록 예정입니다.']);
+  const [editingMenu, setEditingMenu] = useState<Menu | null>(null);
+  const [menuForm, setMenuForm] = useState({ name: '', price: '', kcal: '', stock: '', image: '' });
+  const [menuLoading, setMenuLoading] = useState(false);
+
+  // 주문
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [orderFilter, setOrderFilter] = useState('전체');
+
+  // 회원
+  const [members, setMembers] = useState<Member[]>([]);
+
+  // 픽업
   const [qrInput, setQrInput] = useState('');
+  const [pickupLog, setPickupLog] = useState<string[]>([]);
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(''), 2500);
+  // 공지
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [showNoticeForm, setShowNoticeForm] = useState(false);
+  const [noticeForm, setNoticeForm] = useState({ type: '공지', title: '', date: '' });
+
+  // 데이터 로드
+  useEffect(() => { fetchMenus(); }, []);
+  useEffect(() => { if (tab === 'order') fetchOrders(); }, [tab]);
+  useEffect(() => { if (tab === 'member') fetchMembers(); }, [tab]);
+  useEffect(() => { if (tab === 'notice') fetchNotices(); }, [tab]);
+
+  const fetchMenus = async () => {
+    const { data } = await supabase.from('menus').select('*').order('id');
+    if (data) setMenus(data);
   };
 
-  const startUndo = (id: number, prevStatus: string, newStatus: string) => {
-    // 이전 타이머 정리
-    if (undoTimer) clearInterval(undoTimer);
+  const fetchOrders = async () => {
+    const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+    if (data) setOrders(data);
+  };
 
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
-    setUndoInfo({ id, prevStatus, countdown: UNDO_SECONDS });
+  const fetchMembers = async () => {
+    const { data } = await supabase.from('members').select('*').order('id');
+    if (data) setMembers(data);
+  };
 
-    const timer = setInterval(() => {
-      setUndoInfo(prev => {
-        if (!prev) return null;
-        if (prev.countdown <= 1) {
-          clearInterval(timer);
-          return null;
-        }
-        return { ...prev, countdown: prev.countdown - 1 };
+  const fetchNotices = async () => {
+    const { data } = await supabase.from('notices').select('*').order('id', { ascending: false });
+    if (data) setNotices(data);
+  };
+
+  // 메뉴 저장
+  const handleMenuSave = async () => {
+    if (!menuForm.name || !menuForm.price) return;
+    setMenuLoading(true);
+    if (editingMenu) {
+      await supabase.from('menus').update({
+        name: menuForm.name, price: Number(menuForm.price),
+        kcal: Number(menuForm.kcal), stock: Number(menuForm.stock), image: menuForm.image,
+      }).eq('id', editingMenu.id);
+    } else {
+      await supabase.from('menus').insert({
+        name: menuForm.name, price: Number(menuForm.price),
+        kcal: Number(menuForm.kcal), stock: Number(menuForm.stock), image: menuForm.image,
       });
-    }, 1000);
-
-    setUndoTimer(timer);
-  };
-
-  const handleUndo = () => {
-    if (!undoInfo) return;
-    if (undoTimer) clearInterval(undoTimer);
-    setOrders(prev => prev.map(o => o.id === undoInfo.id ? { ...o, status: undoInfo.prevStatus } : o));
-    setUndoInfo(null);
-    showToast('되돌렸어요! ↩️');
-  };
-
-  const toggleSoldOut = (id: number) => {
-    setMenus(menus.map(m => {
-      if (m.id === id) {
-        const next = !m.soldOut;
-        showToast(next ? `${m.name} 품절 처리됐어요` : `${m.name} 품절 해제됐어요 ✅`);
-        return { ...m, soldOut: next };
-      }
-      return m;
-    }));
-  };
-
-  const deleteMenu = (id: number) => {
-    setMenus(menus.filter(m => m.id !== id));
-    showToast('메뉴가 삭제됐어요');
-  };
-
-  const addMenu = () => {
-    if (!newMenu.name || !newMenu.price) return;
-    setMenus([...menus, {
-      id: Date.now(), name: newMenu.name,
-      price: Number(newMenu.price), kcal: Number(newMenu.kcal),
-      stock: Number(newMenu.stock), soldOut: false
-    }]);
-    setNewMenu({ name: '', price: '', kcal: '', stock: '' });
+    }
+    setMenuForm({ name: '', price: '', kcal: '', stock: '', image: '' });
+    setEditingMenu(null);
     setShowMenuForm(false);
-    showToast('메뉴가 등록됐어요! ✅');
+    setMenuLoading(false);
+    fetchMenus();
   };
 
-  const handleQrScan = () => {
-    if (!qrInput) return;
-    showToast(`주문번호 ${qrInput} 픽업 완료 처리됐어요! ✅`);
+  const handleMenuEdit = (menu: Menu) => {
+    setEditingMenu(menu);
+    setMenuForm({ name: menu.name, price: String(menu.price), kcal: String(menu.kcal), stock: String(menu.stock), image: menu.image });
+    setShowMenuForm(true);
+  };
+
+  const handleMenuDelete = async (id: number) => {
+    if (!confirm('정말 삭제하시겠습니까?')) return;
+    await supabase.from('menus').delete().eq('id', id);
+    fetchMenus();
+  };
+
+  const handleSoldOutToggle = async (menu: Menu) => {
+    await supabase.from('menus').update({ sold_out: !menu.sold_out }).eq('id', menu.id);
+    fetchMenus();
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => setMenuForm(prev => ({ ...prev, image: reader.result as string }));
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // 픽업
+  const handlePickupScan = async () => {
+    if (!qrInput.trim()) return;
+    setPickupLog(prev => [`✅ [${new Date().toLocaleTimeString()}] "${qrInput}" 픽업 완료`, ...prev]);
+    await supabase.from('orders').update({ status: '픽업완료' }).eq('id', Number(qrInput));
     setQrInput('');
+    if (tab === 'pickup') fetchOrders();
   };
 
-  const addNotice = () => {
-    if (!notice.trim()) return;
-    setNotices([notice, ...notices]);
-    setNotice('');
-    showToast('공지사항이 등록됐어요 ✅');
+  // 공지 저장
+  const handleNoticeSave = async () => {
+    if (!noticeForm.title || !noticeForm.date) return;
+    await supabase.from('notices').insert({ type: noticeForm.type, title: noticeForm.title, date: noticeForm.date });
+    setNoticeForm({ type: '공지', title: '', date: '' });
+    setShowNoticeForm(false);
+    fetchNotices();
   };
 
-  const tabs: { id: Tab; label: string; icon: string }[] = [
-    { id: 'menu', label: '메뉴관리', icon: '🍱' },
-    { id: 'order', label: '주문관리', icon: '📋' },
-    { id: 'member', label: '회원관리', icon: '👥' },
-    { id: 'pickup', label: '픽업관리', icon: '📦' },
-    { id: 'stats', label: '매출통계', icon: '📈' },
-    { id: 'notice', label: '공지/이벤트', icon: '📢' },
-  ];
+  const handleNoticeToggle = async (notice: Notice) => {
+    await supabase.from('notices').update({ published: !notice.published }).eq('id', notice.id);
+    fetchNotices();
+  };
 
-  const totalRevenue = orders.filter(o => o.status !== '취소됨').reduce((sum, o) => sum + o.price, 0);
-  const completedCount = orders.filter(o => o.status === '픽업완료').length;
-  const reservedCount = orders.filter(o => o.status === '예약완료').length;
+  const handleNoticeDelete = async (id: number) => {
+    if (!confirm('삭제하시겠습니까?')) return;
+    await supabase.from('notices').delete().eq('id', id);
+    fetchNotices();
+  };
+
+  const filteredOrders = orderFilter === '전체' ? orders : orders.filter(o => o.status === orderFilter);
+
+  const statusColor = (s: string) => {
+    if (s === '예약완료') return '#3B6D11';
+    if (s === '픽업완료') return '#185FA5';
+    if (s === '취소됨') return '#999';
+    return '#333';
+  };
 
   return (
-    <div style={{ background: '#f5f5f5', minHeight: '100vh', display: 'flex', justifyContent: 'center' }}>
-      <div style={{ width: '100%', maxWidth: 480, background: '#fff', fontFamily: 'sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#F7F8FA', fontFamily: 'Pretendard, -apple-system, sans-serif' }}>
 
-        {/* 헤더 */}
-        <div style={{ background: '#1a3a5c', color: '#fff', padding: '16px' }}>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>🏢 튼튼밀 관리자</div>
-          <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>2026년 4월 29일 (수) · 오늘 주문 {orders.filter(o => o.status !== '취소됨').length}건</div>
+      {/* 헤더 */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #E8E8E8', padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 22 }}>🥗</span>
+          <span style={{ fontWeight: 800, fontSize: 17, color: '#1A1A1A' }}>튼튼밀 관리자</span>
         </div>
-
-        {/* 되돌리기 배너 */}
-        {undoInfo && (
-          <div style={{ background: '#2c3e50', color: '#fff', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: 13 }}>
-              처리됐어요 · <span style={{ color: '#f39c12', fontWeight: 700 }}>{undoInfo.countdown}초</span> 안에 되돌리기 가능
-            </div>
-            <button onClick={handleUndo}
-              style={{ background: '#f39c12', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-              ↩️ 되돌리기
-            </button>
-          </div>
-        )}
-
-        {/* 토스트 */}
-        {toast && (
-          <div style={{ position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)', background: '#222', color: '#fff', padding: '12px 24px', borderRadius: 24, fontSize: 13, fontWeight: 600, zIndex: 200, whiteSpace: 'nowrap' }}>
-            {toast}
-          </div>
-        )}
-
-        {/* 탭 */}
-        <div style={{ display: 'flex', overflowX: 'auto', borderBottom: '2px solid #eee', background: '#fff' }}>
-          {tabs.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              style={{ flex: '0 0 auto', padding: '10px 14px', border: 'none', background: 'none', fontSize: 11, fontWeight: tab === t.id ? 700 : 400, color: tab === t.id ? '#1a3a5c' : '#999', borderBottom: tab === t.id ? '2px solid #1a3a5c' : '2px solid transparent', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              {t.icon} {t.label}
-            </button>
-          ))}
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <span style={{ fontSize: 12, color: '#888' }}>관리자님 환영합니다</span>
+          <button onClick={() => router.push('/')} style={{ fontSize: 12, color: '#fff', background: '#3B6D11', border: 'none', borderRadius: 6, padding: '5px 12px', cursor: 'pointer' }}>홈으로</button>
         </div>
+      </div>
 
-        <div style={{ padding: '16px' }}>
+      {/* 탭 */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #E8E8E8', display: 'flex', overflowX: 'auto', padding: '0 8px' }}>
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            flex: '0 0 auto', padding: '14px 18px', border: 'none', background: 'none',
+            fontSize: 13, fontWeight: tab === t.id ? 700 : 400,
+            color: tab === t.id ? '#3B6D11' : '#666',
+            borderBottom: tab === t.id ? '2px solid #3B6D11' : '2px solid transparent',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
+          }}>
+            <span>{t.icon}</span><span>{t.label}</span>
+          </button>
+        ))}
+      </div>
 
-          {/* ── 메뉴관리 ── */}
-          {tab === 'menu' && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <div style={{ fontSize: 14, fontWeight: 700 }}>오늘의 메뉴</div>
-                <button onClick={() => setShowMenuForm(!showMenuForm)}
-                  style={{ background: '#3B6D11', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+      <div style={{ padding: 16, maxWidth: 600, margin: '0 auto', boxSizing: 'border-box' }}>
+
+        {/* ── 메뉴관리 ── */}
+        {tab === 'menu' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>오늘의 메뉴 ({menus.length})</div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span onClick={() => router.push('/admin/menu-calendar')} style={{ fontSize: 11, color: '#185FA5', cursor: 'pointer' }}>📅 날짜별 지정</span>
+                <button onClick={() => { setEditingMenu(null); setMenuForm({ name: '', price: '', kcal: '', stock: '', image: '' }); setShowMenuForm(v => !v); }}
+                  style={{ background: '#3B6D11', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, cursor: 'pointer' }}>
                   + 메뉴 등록
                 </button>
               </div>
-
-              {showMenuForm && (
-                <div style={{ background: '#f9fdf5', border: '1px solid #d5e8c4', borderRadius: 12, padding: '14px', marginBottom: 12 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: '#3B6D11' }}>새 메뉴 등록</div>
-                  {[
-                    { label: '메뉴 이름', key: 'name', placeholder: '예) 제육볶음 덮밥' },
-                    { label: '가격 (원)', key: 'price', placeholder: '예) 9500' },
-                    { label: '칼로리 (kcal)', key: 'kcal', placeholder: '예) 520' },
-                    { label: '수량', key: 'stock', placeholder: '예) 50' },
-                  ].map(f => (
-                    <div key={f.key} style={{ marginBottom: 8 }}>
-                      <div style={{ fontSize: 11, color: '#555', marginBottom: 3 }}>{f.label}</div>
-                      <input value={(newMenu as any)[f.key]} onChange={e => setNewMenu({ ...newMenu, [f.key]: e.target.value })}
-                        placeholder={f.placeholder}
-                        style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' }} />
-                    </div>
-                  ))}
-                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                    <button onClick={() => setShowMenuForm(false)} style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', fontSize: 13, cursor: 'pointer' }}>취소</button>
-                    <button onClick={addMenu} style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none', background: '#3B6D11', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>등록하기</button>
-                  </div>
-                </div>
-              )}
-
-              {menus.map(menu => (
-                <div key={menu.id} style={{ background: '#f9f9f9', borderRadius: 12, padding: '14px', marginBottom: 10, opacity: menu.soldOut ? 0.6 : 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700 }}>{menu.name}</div>
-                        {menu.soldOut && <span style={{ fontSize: 9, background: '#FFE8E8', color: '#C0392B', padding: '2px 6px', borderRadius: 8, fontWeight: 700 }}>품절</span>}
-                      </div>
-                      <div style={{ fontSize: 11, color: '#888', marginTop: 3 }}>{menu.price.toLocaleString()}원 · {menu.kcal}kcal · 잔여 {menu.stock}개</div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={() => toggleSoldOut(menu.id)}
-                        style={{ padding: '6px 10px', borderRadius: 7, border: 'none', fontSize: 11, fontWeight: 700, cursor: 'pointer', background: menu.soldOut ? '#E8F5D8' : '#FFE8E8', color: menu.soldOut ? '#3B6D11' : '#C0392B' }}>
-                        {menu.soldOut ? '해제' : '품절'}
-                      </button>
-                      <button onClick={() => deleteMenu(menu.id)}
-                        style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid #ddd', background: '#fff', fontSize: 11, cursor: 'pointer', color: '#888' }}>
-                        삭제
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
-          )}
 
-          {/* ── 주문관리 ── */}
-          {tab === 'order' && (
-            <div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-                {[
-                  { label: '예약완료', count: reservedCount, color: '#3B6D11', bg: '#E8F5D8' },
-                  { label: '픽업완료', count: completedCount, color: '#1a5276', bg: '#EBF5FB' },
-                  { label: '총 매출', count: `${totalRevenue.toLocaleString()}원`, color: '#6c3483', bg: '#F5EEF8' },
-                ].map((s, i) => (
-                  <div key={i} style={{ flex: 1, background: s.bg, borderRadius: 10, padding: '10px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 16, fontWeight: 900, color: s.color }}>{s.count}</div>
-                    <div style={{ fontSize: 10, color: s.color, marginTop: 2 }}>{s.label}</div>
+            {showMenuForm && (
+              <div style={{ background: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, border: '1px solid #E8E8E8', boxSizing: 'border-box' }}>
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>{editingMenu ? '메뉴 수정' : '새 메뉴 등록'}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+                  <input placeholder="메뉴명" value={menuForm.name} onChange={e => setMenuForm({ ...menuForm, name: e.target.value })} style={inputStyle} />
+                  <input placeholder="가격 (원)" value={menuForm.price} onChange={e => setMenuForm({ ...menuForm, price: e.target.value })} type="number" style={inputStyle} />
+                  <input placeholder="칼로리 (kcal)" value={menuForm.kcal} onChange={e => setMenuForm({ ...menuForm, kcal: e.target.value })} type="number" style={inputStyle} />
+                  <input placeholder="재고 수량" value={menuForm.stock} onChange={e => setMenuForm({ ...menuForm, stock: e.target.value })} type="number" style={inputStyle} />
+                  <div>
+                    <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>📷 메뉴 사진</div>
+                    <input type="file" accept="image/*" onChange={handleImageChange} style={inputStyle} />
+                    {menuForm.image && <img src={menuForm.image} alt="미리보기" style={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: 8, marginTop: 8, display: 'block' }} />}
                   </div>
-                ))}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={handleMenuSave} disabled={menuLoading} style={{ background: menuLoading ? '#aaa' : '#3B6D11', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 0', fontSize: 13, cursor: 'pointer', flex: 1 }}>
+                    {menuLoading ? '저장 중...' : '저장'}
+                  </button>
+                  <button onClick={() => setShowMenuForm(false)} style={{ background: '#f0f0f0', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, cursor: 'pointer' }}>취소</button>
+                </div>
               </div>
+            )}
 
-              {orders.map(order => (
-                <div key={order.id} style={{ background: '#f9f9f9', borderRadius: 12, padding: '12px 14px', marginBottom: 8 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 700 }}>{order.name}</div>
-                      <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{order.menu} · 픽업 {order.time}</div>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10,
-                        background: order.status === '예약완료' ? '#E8F5D8' : order.status === '픽업완료' ? '#EBF5FB' : '#FFE8E8',
-                        color: order.status === '예약완료' ? '#3B6D11' : order.status === '픽업완료' ? '#1a5276' : '#C0392B' }}>
-                        {order.status}
-                      </span>
-                      {order.status === '예약완료' && (
-                        <div style={{ display: 'flex', gap: 4 }}>
-                          <button onClick={() => startUndo(order.id, '예약완료', '픽업완료')}
-                            style={{ fontSize: 10, background: '#3B6D11', color: '#fff', border: 'none', borderRadius: 5, padding: '3px 7px', cursor: 'pointer' }}>픽업완료</button>
-                          <button onClick={() => startUndo(order.id, '예약완료', '취소됨')}
-                            style={{ fontSize: 10, color: '#C0392B', background: 'none', border: '1px solid #C0392B', borderRadius: 5, padding: '3px 7px', cursor: 'pointer' }}>취소</button>
-                        </div>
-                      )}
+            {menus.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#bbb', fontSize: 13, padding: '40px 0' }}>등록된 메뉴가 없어요</div>
+            ) : (
+              menus.map(menu => (
+                <div key={menu.id} style={{ background: '#fff', borderRadius: 12, padding: '12px 14px', marginBottom: 8, border: '1px solid #E8E8E8', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 52, height: 52, borderRadius: 10, overflow: 'hidden', background: '#F0F5EC', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>
+                    {menu.image ? <img src={menu.image} alt={menu.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🍱'}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{menu.name}</div>
+                    <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{menu.price.toLocaleString()}원 · {menu.kcal}kcal · 재고 {menu.stock}개</div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, flexShrink: 0 }}>
+                    <button onClick={() => handleSoldOutToggle(menu)} style={{ fontSize: 11, padding: '3px 9px', borderRadius: 6, border: 'none', cursor: 'pointer', fontWeight: 700, background: menu.sold_out ? '#FFE5E5' : '#E8F5E0', color: menu.sold_out ? '#D32F2F' : '#3B6D11' }}>
+                      {menu.sold_out ? '품절' : '판매중'}
+                    </button>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <button onClick={() => handleMenuEdit(menu)} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: 'pointer' }}>수정</button>
+                      <button onClick={() => handleMenuDelete(menu.id)} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, border: 'none', background: '#FFE5E5', color: '#D32F2F', cursor: 'pointer' }}>삭제</button>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
+        )}
 
-          {/* ── 회원관리 ── */}
-          {tab === 'member' && (
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>회원 목록 ({initialMembers.length}명)</div>
-              {initialMembers.map(m => (
-                <div key={m.id} style={{ background: '#f9f9f9', borderRadius: 12, padding: '12px 14px', marginBottom: 8 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 700 }}>{m.name}</div>
-                      <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{m.phone}</div>
-                      <div style={{ fontSize: 11, color: '#888' }}>총 {m.orders}건 · 마지막 {m.last}</div>
-                    </div>
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 10,
-                      background: m.sub !== '없음' ? '#E8F5D8' : '#f5f5f5',
-                      color: m.sub !== '없음' ? '#3B6D11' : '#999' }}>
-                      {m.sub}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* ── 픽업관리 ── */}
-          {tab === 'pickup' && (
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>QR 픽업 처리</div>
-              <div style={{ background: '#f9fdf5', border: '1px solid #d5e8c4', borderRadius: 12, padding: '16px', marginBottom: 16 }}>
-                <div style={{ fontSize: 12, color: '#555', marginBottom: 8 }}>주문번호 입력 (QR 스캔 시 자동입력)</div>
-                <input value={qrInput} onChange={e => setQrInput(e.target.value)}
-                  placeholder="주문번호 입력"
-                  style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14, boxSizing: 'border-box', marginBottom: 8 }} />
-                <button onClick={handleQrScan}
-                  style={{ width: '100%', padding: '12px', borderRadius: 8, border: 'none', background: '#3B6D11', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-                  픽업 완료 처리 ✅
-                </button>
-              </div>
-
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>오늘 픽업 현황</div>
+        {/* ── 주문관리 ── */}
+        {tab === 'order' && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
               {[
-                { time: '11:30', total: 3, done: 3 },
-                { time: '12:00', total: 8, done: 5 },
-                { time: '12:30', total: 6, done: 2 },
-                { time: '13:00', total: 2, done: 0 },
-              ].map(t => (
-                <div key={t.time} style={{ background: '#f9f9f9', borderRadius: 10, padding: '12px 14px', marginBottom: 8 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>{t.time}</div>
-                    <div style={{ fontSize: 12, color: '#888' }}>{t.done}/{t.total}명 픽업완료</div>
-                  </div>
-                  <div style={{ marginTop: 8, height: 6, background: '#eee', borderRadius: 3 }}>
-                    <div style={{ width: `${(t.done/t.total)*100}%`, height: '100%', background: '#3B6D11', borderRadius: 3 }} />
-                  </div>
+                { label: '전체 주문', value: orders.length, color: '#185FA5' },
+                { label: '픽업완료', value: orders.filter(o => o.status === '픽업완료').length, color: '#3B6D11' },
+                { label: '취소', value: orders.filter(o => o.status === '취소됨').length, color: '#D32F2F' },
+              ].map(card => (
+                <div key={card.label} style={{ background: '#fff', borderRadius: 10, padding: 10, textAlign: 'center', border: '1px solid #E8E8E8' }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: card.color }}>{card.value}</div>
+                  <div style={{ fontSize: 11, color: '#888' }}>{card.label}</div>
                 </div>
               ))}
             </div>
-          )}
-
-          {/* ── 매출통계 ── */}
-          {tab === 'stats' && (
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>오늘 매출 요약</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
-                {[
-                  { label: '총 매출', value: `${totalRevenue.toLocaleString()}원`, color: '#3B6D11' },
-                  { label: '총 주문', value: `${orders.filter(o=>o.status!=='취소됨').length}건`, color: '#1a5276' },
-                  { label: '픽업완료', value: `${completedCount}건`, color: '#6c3483' },
-                  { label: '취소', value: `${orders.filter(o=>o.status==='취소됨').length}건`, color: '#C0392B' },
-                ].map((s, i) => (
-                  <div key={i} style={{ background: '#f9f9f9', borderRadius: 10, padding: '14px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 20, fontWeight: 900, color: s.color }}>{s.value}</div>
-                    <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>{s.label}</div>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+              {['전체', '예약완료', '픽업완료', '취소됨'].map(f => (
+                <button key={f} onClick={() => setOrderFilter(f)} style={{ fontSize: 12, padding: '5px 12px', borderRadius: 20, border: 'none', cursor: 'pointer', background: orderFilter === f ? '#3B6D11' : '#f0f0f0', color: orderFilter === f ? '#fff' : '#333' }}>{f}</button>
+              ))}
+              <button onClick={() => window.print()} style={{ marginLeft: 'auto', fontSize: 12, padding: '5px 12px', borderRadius: 20, border: '1px solid #ddd', background: '#fff', cursor: 'pointer' }}>🖨️ 출력</button>
+            </div>
+            {filteredOrders.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#bbb', fontSize: 13, padding: '40px 0' }}>주문이 없어요</div>
+            ) : (
+              filteredOrders.map(order => (
+                <div key={order.id} style={{ background: '#fff', borderRadius: 12, padding: '12px 14px', marginBottom: 8, border: '1px solid #E8E8E8', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{order.member_name}</div>
+                    <div style={{ fontSize: 12, color: '#888' }}>{order.menu_name} · {order.pickup_time} · {order.price?.toLocaleString()}원</div>
                   </div>
-                ))}
-              </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: statusColor(order.status), background: `${statusColor(order.status)}18`, padding: '3px 10px', borderRadius: 20, flexShrink: 0 }}>{order.status}</span>
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>인기 메뉴 순위</div>
+        {/* ── 회원관리 ── */}
+        {tab === 'member' && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
               {[
-                { rank: 1, name: '불고기 덮밥', count: 18, rate: 90 },
-                { rank: 2, name: '닭가슴살 샐러드', count: 12, rate: 60 },
-                { rank: 3, name: '된장국 정식', count: 8, rate: 40 },
-              ].map(m => (
-                <div key={m.rank} style={{ background: '#f9f9f9', borderRadius: 10, padding: '12px 14px', marginBottom: 8 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700 }}>#{m.rank} {m.name}</div>
-                    <div style={{ fontSize: 12, color: '#3B6D11', fontWeight: 700 }}>{m.count}건</div>
-                  </div>
-                  <div style={{ height: 6, background: '#eee', borderRadius: 3 }}>
-                    <div style={{ width: `${m.rate}%`, height: '100%', background: '#3B6D11', borderRadius: 3 }} />
-                  </div>
+                { label: '전체 회원', value: members.length },
+                { label: '구독 회원', value: members.filter(m => m.subscription !== '없음').length },
+                { label: '단골 (10+)', value: members.filter(m => m.total_orders >= 10).length },
+              ].map(card => (
+                <div key={card.label} style={{ background: '#fff', borderRadius: 10, padding: 10, textAlign: 'center', border: '1px solid #E8E8E8' }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: '#3B6D11' }}>{card.value}</div>
+                  <div style={{ fontSize: 11, color: '#888' }}>{card.label}</div>
                 </div>
               ))}
             </div>
-          )}
+            {members.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#bbb', fontSize: 13, padding: '40px 0' }}>등록된 회원이 없어요</div>
+            ) : (
+              members.map(member => (
+                <div key={member.id} style={{ background: '#fff', borderRadius: 12, padding: '12px 14px', marginBottom: 8, border: '1px solid #E8E8E8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{member.name}</div>
+                    <div style={{ fontSize: 12, color: '#888' }}>{member.phone}</div>
+                    <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>총 {member.total_orders}회 · 최근 {member.last_order}</div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+                    <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, fontWeight: 700, background: member.subscription !== '없음' ? '#E8F5E0' : '#F5F5F5', color: member.subscription !== '없음' ? '#3B6D11' : '#999' }}>{member.subscription}</span>
+                    {member.total_orders >= 10 && <span style={{ fontSize: 11, color: '#F59E0B', fontWeight: 700 }}>⭐ 단골</span>}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
-          {/* ── 공지/이벤트 ── */}
-          {tab === 'notice' && (
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>공지사항 등록</div>
-              <div style={{ background: '#f9fdf5', border: '1px solid #d5e8c4', borderRadius: 12, padding: '14px', marginBottom: 16 }}>
-                <textarea value={notice} onChange={e => setNotice(e.target.value)}
-                  placeholder="공지 내용을 입력하세요"
-                  rows={3}
-                  style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box', resize: 'none', marginBottom: 8 }} />
-                <button onClick={addNotice}
-                  style={{ width: '100%', padding: '12px', borderRadius: 8, border: 'none', background: '#3B6D11', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                  📢 공지 등록하기
-                </button>
+        {/* ── 픽업관리 ── */}
+        {tab === 'pickup' && (
+          <div>
+            <div style={{ background: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, border: '1px solid #E8E8E8' }}>
+              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10 }}>📷 QR 스캔 픽업 처리</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input placeholder="QR 코드 또는 주문번호" value={qrInput} onChange={e => setQrInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handlePickupScan()}
+                  style={{ flex: 1, minWidth: 0, padding: '10px 12px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' }} />
+                <button onClick={handlePickupScan} style={{ background: '#3B6D11', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 16px', fontSize: 13, cursor: 'pointer', flexShrink: 0 }}>확인</button>
               </div>
-
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>등록된 공지</div>
-              {notices.map((n, i) => (
-                <div key={i} style={{ background: '#f9f9f9', borderRadius: 10, padding: '12px 14px', marginBottom: 8, fontSize: 13, color: '#333', borderLeft: '3px solid #3B6D11' }}>
-                  {n}
+            </div>
+            <div style={{ background: '#fff', borderRadius: 12, padding: 14, border: '1px solid #E8E8E8', marginBottom: 12 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>📋 픽업 이력</div>
+              {pickupLog.length === 0
+                ? <div style={{ textAlign: 'center', color: '#bbb', fontSize: 13, padding: '20px 0' }}>처리된 픽업이 없습니다</div>
+                : pickupLog.map((log, i) => <div key={i} style={{ fontSize: 12, color: '#444', padding: '6px 0', borderBottom: i < pickupLog.length - 1 ? '1px solid #F0F0F0' : 'none' }}>{log}</div>)
+              }
+            </div>
+            <div style={{ background: '#FFF8E1', borderRadius: 12, padding: 14, border: '1px solid #FFE082' }}>
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>⚠️ 미픽업 알림 대상</div>
+              {orders.filter(o => o.status === '예약완료').map(o => (
+                <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, padding: '6px 0', borderBottom: '1px solid #FFE082' }}>
+                  <span>{o.member_name} ({o.menu_name})</span>
+                  <button style={{ fontSize: 11, background: '#F59E0B', color: '#fff', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', flexShrink: 0 }}>알림톡 발송</button>
                 </div>
               ))}
             </div>
-          )}
+          </div>
+        )}
 
-        </div>
+        {/* ── 매출통계 ── */}
+        {tab === 'stats' && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 14 }}>
+              {[
+                { label: '오늘 매출', value: `${orders.filter(o => o.status !== '취소됨').reduce((s, o) => s + (o.price || 0), 0).toLocaleString()}원`, sub: `${orders.length}건` },
+                { label: '전체 주문', value: `${orders.length}건`, sub: '누적' },
+                { label: '구독 회원', value: `${members.filter(m => m.subscription !== '없음').length}명`, sub: '활성' },
+                { label: '전체 메뉴', value: `${menus.length}개`, sub: '등록됨' },
+              ].map(card => (
+                <div key={card.label} style={{ background: '#fff', borderRadius: 12, padding: 14, border: '1px solid #E8E8E8' }}>
+                  <div style={{ fontSize: 11, color: '#888', marginBottom: 4 }}>{card.label}</div>
+                  <div style={{ fontWeight: 800, fontSize: 16 }}>{card.value}</div>
+                  <div style={{ fontSize: 11, color: '#3B6D11', marginTop: 2 }}>{card.sub}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── 공지·이벤트 ── */}
+        {tab === 'notice' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>공지 · 이벤트 목록</div>
+              <button onClick={() => setShowNoticeForm(v => !v)} style={{ background: '#3B6D11', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, cursor: 'pointer' }}>+ 등록</button>
+            </div>
+            {showNoticeForm && (
+              <div style={{ background: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, border: '1px solid #E8E8E8', boxSizing: 'border-box' }}>
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>새 공지 등록</div>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                  <select value={noticeForm.type} onChange={e => setNoticeForm({ ...noticeForm, type: e.target.value })} style={{ padding: 8, borderRadius: 8, border: '1px solid #ddd', fontSize: 13, flexShrink: 0 }}>
+                    <option>공지</option>
+                    <option>이벤트</option>
+                  </select>
+                  <input placeholder="날짜 (2025-05-01)" value={noticeForm.date} onChange={e => setNoticeForm({ ...noticeForm, date: e.target.value })}
+                    style={{ flex: 1, minWidth: 0, padding: '8px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' }} />
+                </div>
+                <input placeholder="제목" value={noticeForm.title} onChange={e => setNoticeForm({ ...noticeForm, title: e.target.value })} style={{ ...inputStyle, marginBottom: 8 }} />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={handleNoticeSave} style={{ background: '#3B6D11', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 0', fontSize: 13, cursor: 'pointer', flex: 1 }}>저장</button>
+                  <button onClick={() => setShowNoticeForm(false)} style={{ background: '#f0f0f0', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, cursor: 'pointer' }}>취소</button>
+                </div>
+              </div>
+            )}
+            {notices.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#bbb', fontSize: 13, padding: '40px 0' }}>등록된 공지가 없어요</div>
+            ) : (
+              notices.map(notice => (
+                <div key={notice.id} style={{ background: '#fff', borderRadius: 12, padding: '12px 14px', marginBottom: 8, border: '1px solid #E8E8E8', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                      <span style={{ fontSize: 11, padding: '2px 7px', borderRadius: 20, fontWeight: 700, background: notice.type === '공지' ? '#E8F5E0' : '#FFF3E0', color: notice.type === '공지' ? '#3B6D11' : '#F57C00', flexShrink: 0 }}>{notice.type}</span>
+                      <span style={{ fontSize: 12, color: '#888' }}>{notice.date}</span>
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{notice.title}</div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, flexShrink: 0 }}>
+                    <button onClick={() => handleNoticeToggle(notice)} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', fontWeight: 700, background: notice.published ? '#E8F5E0' : '#F5F5F5', color: notice.published ? '#3B6D11' : '#999' }}>
+                      {notice.published ? '게시중' : '미게시'}
+                    </button>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <button style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, background: '#EBF4FF', color: '#185FA5', border: 'none', cursor: 'pointer' }}>📱 알림톡</button>
+                      <button onClick={() => handleNoticeDelete(notice.id)} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, background: '#FFE5E5', color: '#D32F2F', border: 'none', cursor: 'pointer' }}>삭제</button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );
