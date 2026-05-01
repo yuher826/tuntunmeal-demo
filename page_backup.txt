@@ -1,22 +1,22 @@
-'use client';
+﻿'use client';
 import BottomNav from './components/BottomNav';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 const menus = [
   {
-    id: 1, name: '불고기 덮밥', kcal: 520, price: 9500, emoji: '🍖',
-    desc: '국내산 소불고기를 특제 양념에 재워 밥 위에 올린 대표 메뉴',
-    allergy: '대두, 밀, 쇠고기',
+    id: 1, name: '遺덇퀬湲???갈', kcal: 520, price: 9500, emoji: '?뜓',
+    desc: '援?궡???뚮텋怨좉린瑜??뱀젣 ?묐뀗???ъ썙 諛??꾩뿉 ?щ┛ ???硫붾돱',
+    allergy: '??? 諛, ?좉퀬湲?,
     nutrition: { carb: 68, protein: 28, fat: 12 },
-    badge: '인기 1위',
+    badge: '?멸린 1??,
   },
   {
-    id: 2, name: '닭가슴살 샐러드', kcal: 380, price: 8500, emoji: '🥗',
-    desc: '저칼로리 닭가슴살과 신선한 채소로 구성된 건강 샐러드',
-    allergy: '닭고기, 계란',
+    id: 2, name: '????댁궡 ?먮윭??, kcal: 380, price: 8500, emoji: '?쪞',
+    desc: '?移쇰줈由?????댁궡怨??좎꽑??梨꾩냼濡?援ъ꽦??嫄닿컯 ?먮윭??,
+    allergy: '??퀬湲? 怨꾨?',
     nutrition: { carb: 22, protein: 38, fat: 8 },
-    badge: '다이어트 추천',
+    badge: '?ㅼ씠?댄듃 異붿쿇',
   },
 ];
 
@@ -33,7 +33,6 @@ export default function Home() {
   const [likeToast, setLikeToast] = useState('');
   const [weather, setWeather] = useState<{ temp: number; desc: string; icon: string } | null>(null);
   const [showCalorie, setShowCalorie] = useState(false);
-  const [showCompare, setShowCompare] = useState(false); // ✅ 2가지 선택 비교 팝업
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -65,21 +64,21 @@ export default function Home() {
         const data = { temp: Math.round(json.main.temp), desc: json.weather[0].description, icon: json.weather[0].main };
         localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
         setWeather(data);
-      } catch (e) { console.log('날씨 불러오기 실패', e); }
+      } catch (e) { console.log('?좎뵪 遺덈윭?ㅺ린 ?ㅽ뙣', e); }
     };
     fetchWeather();
   }, []);
 
   const getWeatherEmoji = (icon: string) => {
-    const map: Record<string, string> = { Clear: '☀️', Clouds: '☁️', Rain: '🌧️', Drizzle: '🌦️', Snow: '❄️', Thunderstorm: '⛈️', Mist: '🌫️', Fog: '🌫️' };
-    return map[icon] || '🌤️';
+    const map: Record<string, string> = { Clear: '?截?, Clouds: '?곻툘', Rain: '?뙢截?, Drizzle: '?뙡截?, Snow: '?꾬툘', Thunderstorm: '?덌툘', Mist: '?뙧截?, Fog: '?뙧截? };
+    return map[icon] || '?뙟截?;
   };
 
   const toggleLike = (menu: typeof menus[0], e: React.MouseEvent) => {
     e.stopPropagation();
     const isLiked = liked.includes(menu.id);
     setLiked(isLiked ? liked.filter(id => id !== menu.id) : [...liked, menu.id]);
-    setLikeToast(isLiked ? `${menu.name} 찜 해제됐어요` : `${menu.name} 찜했어요! ❤️`);
+    setLikeToast(isLiked ? `${menu.name} 李??댁젣?먯뼱?? : `${menu.name} 李쒗뻽?댁슂! ?ㅿ툘`);
     setTimeout(() => setLikeToast(''), 2000);
   };
 
@@ -89,31 +88,31 @@ export default function Home() {
   return (
     <div style={{ minHeight: '100vh', fontFamily: 'sans-serif' }}>
 
-      {/* 헤더 */}
+      {/* ?ㅻ뜑 */}
       <div style={{ background: '#2C3E1A', padding: '16px 16px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: 1 }}>튼튼밀</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: 1 }}>?쇳듉諛</div>
           <div style={{ fontSize: 9, color: '#9FE1CB', letterSpacing: 2 }}>TUNTUNMEAL</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {weather && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: '4px 10px' }}>
               <span style={{ fontSize: 16 }}>{getWeatherEmoji(weather.icon)}</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{weather.temp}°</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{weather.temp}째</span>
               <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)' }}>{weather.desc}</span>
             </div>
           )}
-          <div style={{ background: '#3B6D11', borderRadius: 14, padding: '4px 12px', fontSize: 10, fontWeight: 700, color: '#fff' }}>AM 5:00 부터</div>
+          <div style={{ background: '#3B6D11', borderRadius: 14, padding: '4px 12px', fontSize: 10, fontWeight: 700, color: '#fff' }}>AM 5:00 遺??/div>
         </div>
       </div>
 
-      {/* 타이머 */}
+      {/* ??대㉧ */}
       <div style={{ background: '#2C3E1A', padding: '12px 16px', textAlign: 'center' }}>
-        <div style={{ fontSize: 10, color: '#9FE1CB', marginBottom: 4 }}>오전 10:00 마감까지</div>
+        <div style={{ fontSize: 10, color: '#9FE1CB', marginBottom: 4 }}>?ㅼ쟾 10:00 留덇컧源뚯?</div>
         <div style={{ fontSize: 32, fontWeight: 900, color: '#fff', letterSpacing: 3 }}>{timeLeft || '--:--:--'}</div>
       </div>
 
-      {/* 토스트 */}
+      {/* ?좎뒪??*/}
       {likeToast && (
         <div style={{ position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)', background: '#222', color: '#fff', padding: '12px 24px', borderRadius: 24, fontSize: 13, fontWeight: 600, zIndex: 200, whiteSpace: 'nowrap' }}>
           {likeToast}
@@ -122,24 +121,20 @@ export default function Home() {
 
       <div style={{ padding: '14px 14px 8px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <span style={{ fontSize: 14, fontWeight: 700 }}>오늘의 메뉴</span>
+          <span style={{ fontSize: 14, fontWeight: 700 }}>?ㅻ뒛??硫붾돱</span>
           <div style={{ display: 'flex', gap: 6 }}>
             <button onClick={() => setShowCalorie(!showCalorie)}
               style={{ background: showCalorie ? '#3B6D11' : '#EAF3DE', color: showCalorie ? '#fff' : '#3B6D11', border: 'none', borderRadius: 10, padding: '3px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>
-              🔥 칼로리 비교
+              ?뵦 移쇰줈由?鍮꾧탳
             </button>
-            {/* ✅ 2가지 선택 버튼 - 이제 클릭 가능! */}
-            <button onClick={() => setShowCompare(true)}
-              style={{ background: showCompare ? '#3B6D11' : '#EAF3DE', color: showCompare ? '#fff' : '#3B6D11', border: 'none', borderRadius: 10, padding: '3px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>
-              ⚖️ 2가지 선택
-            </button>
+            <span style={{ background: '#EAF3DE', color: '#3B6D11', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 10 }}>2媛吏 ?좏깮</span>
           </div>
         </div>
 
-        {/* 칼로리 비교 바 */}
+        {/* 移쇰줈由?鍮꾧탳 諛?*/}
         {showCalorie && (
           <div style={{ background: '#fff', borderRadius: 12, padding: '14px', marginBottom: 12 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: '#333' }}>🔥 칼로리 비교</div>
+            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: '#333' }}>?뵦 移쇰줈由?鍮꾧탳</div>
             {menus.map(menu => (
               <div key={menu.id} style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12 }}>
@@ -151,9 +146,9 @@ export default function Home() {
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                   {[
-                    { label: '탄수화물', value: menu.nutrition.carb, color: '#3498db' },
-                    { label: '단백질', value: menu.nutrition.protein, color: '#e74c3c' },
-                    { label: '지방', value: menu.nutrition.fat, color: '#f39c12' },
+                    { label: '?꾩닔?붾Ъ', value: menu.nutrition.carb, color: '#3498db' },
+                    { label: '?⑤갚吏?, value: menu.nutrition.protein, color: '#e74c3c' },
+                    { label: '吏諛?, value: menu.nutrition.fat, color: '#f39c12' },
                   ].map(n => (
                     <div key={n.label} style={{ fontSize: 10, color: n.color, fontWeight: 700 }}>{n.label} {n.value}g</div>
                   ))}
@@ -161,12 +156,12 @@ export default function Home() {
               </div>
             ))}
             <div style={{ fontSize: 11, color: '#888', marginTop: 4, textAlign: 'center' }}>
-              💡 {menus[1].name}이 {menus[0].kcal - menus[1].kcal}kcal 더 적어요!
+              ?뮕 {menus[1].name}??{menus[0].kcal - menus[1].kcal}kcal ???곸뼱??
             </div>
           </div>
         )}
 
-        {/* 메뉴 카드 */}
+        {/* 硫붾돱 移대뱶 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
           {menus.map(menu => (
             <div key={menu.id}
@@ -176,11 +171,11 @@ export default function Home() {
               </div>
               <div onClick={e => toggleLike(menu, e)}
                 style={{ position: 'absolute', top: 4, right: 4, fontSize: 20, cursor: 'pointer', zIndex: 2, filter: liked.includes(menu.id) ? 'none' : 'grayscale(100%)', opacity: liked.includes(menu.id) ? 1 : 0.5 }}>
-                ❤️
+                ?ㅿ툘
               </div>
               <div onClick={e => { e.stopPropagation(); setDetailMenu(menu); }}
                 style={{ position: 'absolute', bottom: 6, right: 6, background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 6, cursor: 'pointer', zIndex: 2 }}>
-                상세 ℹ️
+                ?곸꽭 ?뱄툘
               </div>
               <div onClick={() => setSelectedMenu(menu.id)}
                 style={{ height: 70, background: '#EAF3DE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>
@@ -189,28 +184,28 @@ export default function Home() {
               <div onClick={() => setSelectedMenu(menu.id)} style={{ padding: '8px 10px 10px' }}>
                 <div style={{ fontSize: 12, fontWeight: 700 }}>{menu.name}</div>
                 <div style={{ fontSize: 10, color: menu.kcal < 450 ? '#3B6D11' : '#e67e22', fontWeight: 600 }}>{menu.kcal}kcal</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#3B6D11', marginTop: 3 }}>{menu.price.toLocaleString()}원</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#3B6D11', marginTop: 3 }}>{menu.price.toLocaleString()}??/div>
                 {selectedMenu === menu.id && (
-                  <div style={{ background: '#3B6D11', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', borderRadius: 4, marginTop: 4, padding: '2px 0' }}>선택됨 ✓</div>
+                  <div style={{ background: '#3B6D11', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', borderRadius: 4, marginTop: 4, padding: '2px 0' }}>?좏깮????/div>
                 )}
               </div>
             </div>
           ))}
         </div>
 
-        {/* 찜한 메뉴 */}
+        {/* 李쒗븳 硫붾돱 */}
         {liked.length > 0 && (
           <div style={{ background: '#FFF0F0', borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 16 }}>❤️</span>
+            <span style={{ fontSize: 16 }}>?ㅿ툘</span>
             <div style={{ fontSize: 12, color: '#C0392B', fontWeight: 600 }}>
-              찜한 메뉴: {menus.filter(m => liked.includes(m.id)).map(m => m.name).join(', ')}
+              李쒗븳 硫붾돱: {menus.filter(m => liked.includes(m.id)).map(m => m.name).join(', ')}
             </div>
           </div>
         )}
 
-        {/* 픽업 시간 */}
+        {/* ?쎌뾽 ?쒓컙 */}
         <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>픽업 시간</div>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>?쎌뾽 ?쒓컙</div>
           <div style={{ display: 'flex', gap: 8 }}>
             {times.map(t => (
               <button key={t} onClick={() => setSelectedTime(t)}
@@ -221,21 +216,19 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 주문 버튼 */}
+        {/* 二쇰Ц 踰꾪듉 */}
         <button
           onClick={() => { if (selectedMenu && selectedTime) router.push('/payment'); }}
           disabled={!selectedMenu || !selectedTime}
           style={{ width: '100%', padding: '16px', borderRadius: 12, border: 'none', background: selectedMenu && selectedTime ? '#3B6D11' : '#ddd', color: '#fff', fontSize: 15, fontWeight: 800, cursor: selectedMenu && selectedTime ? 'pointer' : 'default', marginBottom: 14 }}>
-          {selectedMenu && selectedTime
-            ? `${menus.find(m => m.id === selectedMenu)?.name} · ${selectedTime} 예약하기 →`
-            : '메뉴와 시간을 선택하세요'}
+          {selectedMenu && selectedTime ? '二쇰Ц?섍린 ?? : '硫붾돱? ?쒓컙???좏깮?섏꽭??}
         </button>
 
-        {/* 하단 메뉴 */}
+        {/* ?섎떒 硫붾돱 */}
         {[
-          { icon: '📅', bg: '#EAF3DE', title: '메뉴 달력 미리보기', desc: '내일~이번 달 전체 메뉴 확인', path: '/calendar' },
-          { icon: '📋', bg: '#EAF3DE', title: '정기구독', desc: '매일 자동 예약 · 5% 할인', path: '/subscription' },
-          { icon: '🏢', bg: '#185FA5', title: '기업 단체계약 B2B', desc: '10인 이상 · 매니저 담당', path: '/b2b' },
+          { icon: '?뱟', bg: '#EAF3DE', title: '硫붾돱 ?щ젰 誘몃━蹂닿린', desc: '?댁씪~?대쾲 ???꾩껜 硫붾돱 ?뺤씤', path: '/calendar' },
+          { icon: '?뱥', bg: '#EAF3DE', title: '?뺢린援щ룆', desc: '留ㅼ씪 ?먮룞 ?덉빟 쨌 5% ?좎씤', path: '/subscription' },
+          { icon: '?룫', bg: '#185FA5', title: '湲곗뾽 ?⑥껜怨꾩빟 B2B', desc: '10???댁긽 쨌 留ㅻ땲? ?대떦', path: '/b2b' },
         ].map((item, i) => (
           <div key={i} onClick={() => router.push(item.path)}
             style={{ background: '#fff', borderRadius: 12, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, cursor: 'pointer' }}>
@@ -246,78 +239,19 @@ export default function Home() {
                 <div style={{ fontSize: 10, color: '#888' }}>{item.desc}</div>
               </div>
             </div>
-            <span style={{ color: '#ccc' }}>›</span>
+            <span style={{ color: '#ccc' }}>??/span>
           </div>
         ))}
       </div>
 
-      {/* ✅ 2가지 선택 비교 팝업 */}
-      {showCompare && (
-        <div onClick={() => setShowCompare(false)}
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}>
-          <div onClick={e => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: 390, background: '#fff', borderRadius: '20px 20px 0 0', padding: '24px 20px', paddingBottom: 40 }}>
-            <div style={{ width: 40, height: 4, background: '#eee', borderRadius: 2, margin: '0 auto 16px' }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <div style={{ fontSize: 15, fontWeight: 800 }}>⚖️ 메뉴 비교</div>
-              <button onClick={() => setShowCompare(false)}
-                style={{ background: '#f5f5f5', border: 'none', borderRadius: '50%', width: 32, height: 32, fontSize: 16, cursor: 'pointer' }}>✕</button>
-            </div>
-
-            {/* 나란히 비교 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-              {menus.map(menu => (
-                <div key={menu.id}
-                  style={{ background: selectedMenu === menu.id ? '#F0F9E8' : '#f9f9f9', border: `2px solid ${selectedMenu === menu.id ? '#3B6D11' : '#eee'}`, borderRadius: 14, padding: '14px 10px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 36, marginBottom: 6 }}>{menu.emoji}</div>
-                  <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 4 }}>{menu.name}</div>
-                  <div style={{ fontSize: 10, color: '#888', marginBottom: 8 }}>{menu.badge}</div>
-
-                  <div style={{ background: '#fff', borderRadius: 8, padding: '8px', marginBottom: 8 }}>
-                    <div style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>칼로리</div>
-                    <div style={{ fontSize: 16, fontWeight: 900, color: menu.kcal < 450 ? '#3B6D11' : '#e67e22' }}>{menu.kcal}kcal</div>
-                  </div>
-
-                  <div style={{ background: '#fff', borderRadius: 8, padding: '8px', marginBottom: 8 }}>
-                    <div style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>가격</div>
-                    <div style={{ fontSize: 14, fontWeight: 900, color: '#3B6D11' }}>{menu.price.toLocaleString()}원</div>
-                  </div>
-
-                  <div style={{ background: '#fff', borderRadius: 8, padding: '8px', marginBottom: 12 }}>
-                    <div style={{ fontSize: 10, color: '#888', marginBottom: 4 }}>영양성분</div>
-                    <div style={{ fontSize: 10, color: '#3498db', fontWeight: 700 }}>탄 {menu.nutrition.carb}g</div>
-                    <div style={{ fontSize: 10, color: '#e74c3c', fontWeight: 700 }}>단 {menu.nutrition.protein}g</div>
-                    <div style={{ fontSize: 10, color: '#f39c12', fontWeight: 700 }}>지 {menu.nutrition.fat}g</div>
-                  </div>
-
-                  <button onClick={() => { setSelectedMenu(menu.id); setShowCompare(false); }}
-                    style={{ width: '100%', padding: '8px', borderRadius: 8, border: 'none', background: selectedMenu === menu.id ? '#3B6D11' : '#EAF3DE', color: selectedMenu === menu.id ? '#fff' : '#3B6D11', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                    {selectedMenu === menu.id ? '선택됨 ✓' : '이걸로 선택'}
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ background: '#FFF8E8', borderRadius: 10, padding: '10px 14px', textAlign: 'center' }}>
-              <div style={{ fontSize: 12, color: '#e67e22', fontWeight: 700 }}>
-                💡 {menus[1].name}이 {menus[0].kcal - menus[1].kcal}kcal 더 적어요!
-              </div>
-              <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>
-                가격 차이: {(menus[0].price - menus[1].price).toLocaleString()}원
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 메뉴 상세보기 팝업 */}
+      {/* 硫붾돱 ?곸꽭蹂닿린 ?앹뾽 */}
       {detailMenu && (
         <div onClick={() => setDetailMenu(null)}
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}>
           <div onClick={e => e.stopPropagation()}
             style={{ width: '100%', maxWidth: 390, background: '#fff', borderRadius: '20px 20px 0 0', padding: '24px', paddingBottom: 40, position: 'relative' }}>
             <button onClick={() => setDetailMenu(null)}
-              style={{ position: 'absolute', right: 20, top: 20, background: '#f5f5f5', border: 'none', borderRadius: '50%', width: 32, height: 32, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+              style={{ position: 'absolute', right: 20, top: 20, background: '#f5f5f5', border: 'none', borderRadius: '50%', width: 32, height: 32, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>??/button>
             <div style={{ width: 40, height: 4, background: '#eee', borderRadius: 2, margin: '0 auto 20px' }} />
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
               <div style={{ fontSize: 56, marginBottom: 8 }}>{detailMenu.emoji}</div>
@@ -325,26 +259,26 @@ export default function Home() {
               <div style={{ fontSize: 13, color: '#888', marginTop: 4 }}>{detailMenu.desc}</div>
               <button onClick={e => toggleLike(detailMenu, e)}
                 style={{ marginTop: 10, background: liked.includes(detailMenu.id) ? '#FFF0F0' : '#f9f9f9', border: liked.includes(detailMenu.id) ? '1px solid #ffb3b3' : '1px solid #eee', borderRadius: 20, padding: '6px 16px', fontSize: 13, cursor: 'pointer', color: liked.includes(detailMenu.id) ? '#C0392B' : '#888', fontWeight: 600 }}>
-                {liked.includes(detailMenu.id) ? '❤️ 찜됨' : '🤍 찜하기'}
+                {liked.includes(detailMenu.id) ? '?ㅿ툘 李쒕맖' : '?쨳 李쒗븯湲?}
               </button>
             </div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
               <div style={{ flex: 1, background: '#F0F9E8', borderRadius: 10, padding: '10px', textAlign: 'center' }}>
-                <div style={{ fontSize: 16, fontWeight: 900, color: '#3B6D11' }}>{detailMenu.price.toLocaleString()}원</div>
-                <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>가격</div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: '#3B6D11' }}>{detailMenu.price.toLocaleString()}??/div>
+                <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>媛寃?/div>
               </div>
               <div style={{ flex: 1, background: '#FFF8E8', borderRadius: 10, padding: '10px', textAlign: 'center' }}>
                 <div style={{ fontSize: 16, fontWeight: 900, color: '#e67e22' }}>{detailMenu.kcal}kcal</div>
-                <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>칼로리</div>
+                <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>移쇰줈由?/div>
               </div>
             </div>
             <div style={{ background: '#f9f9f9', borderRadius: 10, padding: '12px', marginBottom: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10 }}>영양성분</div>
+              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10 }}>?곸뼇?깅텇</div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {[
-                  { label: '탄수화물', value: detailMenu.nutrition.carb, color: '#3498db' },
-                  { label: '단백질', value: detailMenu.nutrition.protein, color: '#e74c3c' },
-                  { label: '지방', value: detailMenu.nutrition.fat, color: '#f39c12' },
+                  { label: '?꾩닔?붾Ъ', value: detailMenu.nutrition.carb, color: '#3498db' },
+                  { label: '?⑤갚吏?, value: detailMenu.nutrition.protein, color: '#e74c3c' },
+                  { label: '吏諛?, value: detailMenu.nutrition.fat, color: '#f39c12' },
                 ].map(n => (
                   <div key={n.label} style={{ flex: 1, textAlign: 'center' }}>
                     <div style={{ fontSize: 14, fontWeight: 900, color: n.color }}>{n.value}g</div>
@@ -354,15 +288,15 @@ export default function Home() {
               </div>
             </div>
             <div style={{ background: '#FFF8E8', borderRadius: 10, padding: '10px 14px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 16 }}>⚠️</span>
+              <span style={{ fontSize: 16 }}>?좑툘</span>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#e67e22' }}>알레르기 정보</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#e67e22' }}>?뚮젅瑜닿린 ?뺣낫</div>
                 <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{detailMenu.allergy}</div>
               </div>
             </div>
             <button onClick={() => { setSelectedMenu(detailMenu.id); setDetailMenu(null); }}
               style={{ width: '100%', padding: '16px', borderRadius: 12, border: 'none', background: '#3B6D11', color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>
-              이 메뉴 선택하기 ✓
+              ??硫붾돱 ?좏깮?섍린 ??
             </button>
           </div>
         </div>
