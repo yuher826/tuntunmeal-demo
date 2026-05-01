@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-type Tab = 'menu' | 'order' | 'member' | 'pickup' | 'stats' | 'notice';
+type Tab = 'menu' | 'order' | 'member' | 'pickup' | 'stats' | 'notice' | 'b2b';
 
 const tabs = [
   { id: 'menu' as Tab, label: '메뉴관리', icon: '🍱' },
@@ -13,6 +13,7 @@ const tabs = [
   { id: 'pickup' as Tab, label: '픽업관리', icon: '📦' },
   { id: 'stats' as Tab, label: '매출통계', icon: '📊' },
   { id: 'notice' as Tab, label: '공지·이벤트', icon: '📢' },
+  { id: 'b2b' as Tab, label: 'B2B문의', icon: '🏢' },
 ];
 
 const inputStyle: React.CSSProperties = {
@@ -52,11 +53,29 @@ export default function AdminPage() {
   const [showNoticeForm, setShowNoticeForm] = useState(false);
   const [noticeForm, setNoticeForm] = useState({ type: '공지', title: '', date: '' });
 
+  // B2B 문의
+  type B2BInquiry = { id: number; company: string; name: string; phone: string; email: string; count: string; message: string; status: string; created_at: string };
+  const [b2bList, setB2bList] = useState<B2BInquiry[]>([]);
+  const [b2bLoading, setB2bLoading] = useState(false);
+
   // 데이터 로드
   useEffect(() => { fetchMenus(); }, []);
   useEffect(() => { if (tab === 'order') fetchOrders(); }, [tab]);
   useEffect(() => { if (tab === 'member') fetchMembers(); }, [tab]);
   useEffect(() => { if (tab === 'notice') fetchNotices(); }, [tab]);
+  useEffect(() => { if (tab === 'b2b') fetchB2B(); }, [tab]);
+
+  const fetchB2B = async () => {
+    setB2bLoading(true);
+    const { data } = await supabase.from('b2b_inquiries').select('*').order('created_at', { ascending: false });
+    if (data) setB2bList(data);
+    setB2bLoading(false);
+  };
+
+  const handleB2BStatus = async (id: number, status: string) => {
+    await supabase.from('b2b_inquiries').update({ status }).eq('id', id);
+    fetchB2B();
+  };
 
   const fetchMenus = async () => {
     const { data } = await supabase.from('menus').select('*').order('id');
@@ -427,6 +446,68 @@ export default function AdminPage() {
                       <button style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, background: '#EBF4FF', color: '#185FA5', border: 'none', cursor: 'pointer' }}>📱 알림톡</button>
                       <button onClick={() => handleNoticeDelete(notice.id)} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, background: '#FFE5E5', color: '#D32F2F', border: 'none', cursor: 'pointer' }}>삭제</button>
                     </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* ── B2B 문의 ── */}
+        {tab === 'b2b' && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
+              {[
+                { label: '전체 문의', value: b2bList.length, color: '#185FA5' },
+                { label: '검토중', value: b2bList.filter(b => b.status === '검토중').length, color: '#F59E0B' },
+                { label: '완료', value: b2bList.filter(b => b.status === '계약완료').length, color: '#3B6D11' },
+              ].map(card => (
+                <div key={card.label} style={{ background: '#fff', borderRadius: 10, padding: 10, textAlign: 'center', border: '1px solid #E8E8E8' }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: card.color }}>{card.value}</div>
+                  <div style={{ fontSize: 11, color: '#888' }}>{card.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {b2bLoading ? (
+              <div style={{ textAlign: 'center', color: '#bbb', fontSize: 13, padding: '40px 0' }}>불러오는 중...</div>
+            ) : b2bList.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#bbb', fontSize: 13, padding: '40px 0' }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>🏢</div>
+                아직 B2B 문의가 없어요
+              </div>
+            ) : (
+              b2bList.map(item => (
+                <div key={item.id} style={{ background: '#fff', borderRadius: 12, padding: '14px', marginBottom: 10, border: '1px solid #E8E8E8' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 15 }}>{item.company}</div>
+                      <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{item.name} · {item.phone}</div>
+                    </div>
+                    <select
+                      value={item.status || '신규'}
+                      onChange={e => handleB2BStatus(item.id, e.target.value)}
+                      style={{ fontSize: 11, padding: '4px 8px', borderRadius: 8, border: '1px solid #ddd', cursor: 'pointer', background: item.status === '계약완료' ? '#E8F5E0' : item.status === '검토중' ? '#FFF8E1' : '#EBF4FF', color: item.status === '계약완료' ? '#3B6D11' : item.status === '검토중' ? '#F57C00' : '#185FA5', fontWeight: 700 }}>
+                      <option value="신규">신규</option>
+                      <option value="검토중">검토중</option>
+                      <option value="상담중">상담중</option>
+                      <option value="계약완료">계약완료</option>
+                      <option value="미진행">미진행</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                    {item.email && <span style={{ fontSize: 11, color: '#666', background: '#f5f5f5', padding: '2px 8px', borderRadius: 6 }}>✉️ {item.email}</span>}
+                    {item.count && <span style={{ fontSize: 11, color: '#666', background: '#f5f5f5', padding: '2px 8px', borderRadius: 6 }}>👥 {item.count}</span>}
+                    <span style={{ fontSize: 11, color: '#888', background: '#f5f5f5', padding: '2px 8px', borderRadius: 6 }}>📅 {new Date(item.created_at).toLocaleDateString('ko-KR')}</span>
+                  </div>
+                  {item.message && (
+                    <div style={{ background: '#f9f9f9', borderRadius: 8, padding: '8px 10px', fontSize: 12, color: '#555', lineHeight: 1.5 }}>
+                      💬 {item.message}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                    <a href={`tel:${item.phone}`} style={{ flex: 1, textAlign: 'center', padding: '8px', borderRadius: 8, background: '#185FA5', color: '#fff', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>📞 전화하기</a>
+                    {item.email && <a href={`mailto:${item.email}`} style={{ flex: 1, textAlign: 'center', padding: '8px', borderRadius: 8, background: '#EBF4FF', color: '#185FA5', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>✉️ 메일보내기</a>}
                   </div>
                 </div>
               ))

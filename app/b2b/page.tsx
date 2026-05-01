@@ -2,21 +2,38 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import BottomNav from '../components/BottomNav';
+import { supabase } from '@/lib/supabase';
 
 export default function B2BPage() {
   const router = useRouter();
   const [form, setForm] = useState({ company: '', name: '', phone: '', email: '', count: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
   const [toast, setToast] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(''), 2500);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.company || !form.name || !form.phone) {
       showToast('회사명, 담당자명, 연락처는 필수예요!');
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.from('b2b_inquiries').insert({
+      company: form.company,
+      name: form.name,
+      phone: form.phone,
+      email: form.email,
+      count: form.count,
+      message: form.message,
+      status: '신규',
+    });
+    setLoading(false);
+    if (error) {
+      showToast('오류가 발생했어요. 다시 시도해주세요.');
       return;
     }
     setSubmitted(true);
@@ -111,9 +128,9 @@ export default function B2BPage() {
                   rows={3}
                   style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box', resize: 'none' }} />
               </div>
-              <button onClick={handleSubmit}
-                style={{ width: '100%', padding: '16px', borderRadius: 12, border: 'none', background: '#185FA5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-                문의 보내기 →
+              <button onClick={handleSubmit} disabled={loading}
+                style={{ width: '100%', padding: '16px', borderRadius: 12, border: 'none', background: loading ? '#aaa' : '#185FA5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'default' : 'pointer' }}>
+                {loading ? '전송 중...' : '문의 보내기 →'}
               </button>
             </div>
 
