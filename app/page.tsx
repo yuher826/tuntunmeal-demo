@@ -33,7 +33,23 @@ export default function Home() {
   const [likeToast, setLikeToast] = useState('');
   const [weather, setWeather] = useState<{ temp: number; desc: string; icon: string } | null>(null);
   const [showCalorie, setShowCalorie] = useState(false);
-  const [showCompare, setShowCompare] = useState(false); // ✅ 2가지 선택 비교 팝업
+  const [showCompare, setShowCompare] = useState(false); // ✅ 2가지 선택 팝업
+  const [compareSelected, setCompareSelected] = useState<number[]>([]); // ✅ 비교 선택된 메뉴
+  const [showCompareResult, setShowCompareResult] = useState(false); // ✅ 비교 결과 팝업
+
+  const toggleCompareSelect = (id: number) => {
+    if (compareSelected.includes(id)) {
+      setCompareSelected(compareSelected.filter(i => i !== id));
+    } else {
+      if (compareSelected.length >= 2) {
+        alert('2개만 선택할 수 있어요!');
+        return;
+      }
+      setCompareSelected([...compareSelected, id]);
+    }
+  };
+
+  const compareMenus = menus.filter(m => compareSelected.includes(m.id));
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -251,46 +267,90 @@ export default function Home() {
         ))}
       </div>
 
-      {/* ✅ 2가지 선택 비교 팝업 */}
+      {/* ✅ 2가지 선택 - 메뉴 고르기 팝업 */}
       {showCompare && (
-        <div onClick={() => setShowCompare(false)}
+        <div onClick={() => { setShowCompare(false); setCompareSelected([]); }}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 390, background: '#fff', borderRadius: '20px 20px 0 0', padding: '24px 20px', paddingBottom: 40 }}>
+            <div style={{ width: 40, height: 4, background: '#eee', borderRadius: 2, margin: '0 auto 16px' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div style={{ fontSize: 15, fontWeight: 800 }}>⚖️ 비교할 메뉴 2가지 선택</div>
+              <button onClick={() => { setShowCompare(false); setCompareSelected([]); }}
+                style={{ background: '#f5f5f5', border: 'none', borderRadius: '50%', width: 32, height: 32, fontSize: 16, cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ fontSize: 11, color: '#888', marginBottom: 16 }}>
+              {compareSelected.length === 0 && '메뉴를 2개 골라주세요!'}
+              {compareSelected.length === 1 && '1개 더 선택해주세요!'}
+              {compareSelected.length === 2 && '✅ 2개 선택 완료! 아래 버튼을 눌러주세요!'}
+            </div>
+
+            {/* 메뉴 목록 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16, maxHeight: 320, overflowY: 'auto' }}>
+              {menus.map(menu => {
+                const isChecked = compareSelected.includes(menu.id);
+                return (
+                  <div key={menu.id} onClick={() => toggleCompareSelect(menu.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, background: isChecked ? '#F0F9E8' : '#f9f9f9', border: `2px solid ${isChecked ? '#3B6D11' : '#eee'}`, borderRadius: 12, padding: '12px 14px', cursor: 'pointer' }}>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', border: `2px solid ${isChecked ? '#3B6D11' : '#ccc'}`, background: isChecked ? '#3B6D11' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {isChecked && <span style={{ color: '#fff', fontSize: 14, fontWeight: 900 }}>✓</span>}
+                    </div>
+                    <div style={{ fontSize: 28 }}>{menu.emoji}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>{menu.name}</div>
+                      <div style={{ fontSize: 11, color: '#888' }}>{menu.kcal}kcal · {menu.price.toLocaleString()}원</div>
+                    </div>
+                    <div style={{ fontSize: 10, background: '#3B6D11', color: '#fff', padding: '2px 8px', borderRadius: 8 }}>{menu.badge}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => { if (compareSelected.length === 2) { setShowCompare(false); setShowCompareResult(true); } }}
+              disabled={compareSelected.length !== 2}
+              style={{ width: '100%', padding: '14px', borderRadius: 12, border: 'none', background: compareSelected.length === 2 ? '#3B6D11' : '#ddd', color: '#fff', fontSize: 14, fontWeight: 800, cursor: compareSelected.length === 2 ? 'pointer' : 'default' }}>
+              {compareSelected.length === 2 ? '⚖️ 비교하기!' : `${compareSelected.length}/2개 선택됨`}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ 비교 결과 팝업 */}
+      {showCompareResult && compareMenus.length === 2 && (
+        <div onClick={() => { setShowCompareResult(false); setCompareSelected([]); }}
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}>
           <div onClick={e => e.stopPropagation()}
             style={{ width: '100%', maxWidth: 390, background: '#fff', borderRadius: '20px 20px 0 0', padding: '24px 20px', paddingBottom: 40 }}>
             <div style={{ width: 40, height: 4, background: '#eee', borderRadius: 2, margin: '0 auto 16px' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div style={{ fontSize: 15, fontWeight: 800 }}>⚖️ 메뉴 비교</div>
-              <button onClick={() => setShowCompare(false)}
+              <button onClick={() => { setShowCompareResult(false); setCompareSelected([]); }}
                 style={{ background: '#f5f5f5', border: 'none', borderRadius: '50%', width: 32, height: 32, fontSize: 16, cursor: 'pointer' }}>✕</button>
             </div>
 
-            {/* 나란히 비교 */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-              {menus.map(menu => (
+              {compareMenus.map(menu => (
                 <div key={menu.id}
                   style={{ background: selectedMenu === menu.id ? '#F0F9E8' : '#f9f9f9', border: `2px solid ${selectedMenu === menu.id ? '#3B6D11' : '#eee'}`, borderRadius: 14, padding: '14px 10px', textAlign: 'center' }}>
                   <div style={{ fontSize: 36, marginBottom: 6 }}>{menu.emoji}</div>
                   <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 4 }}>{menu.name}</div>
                   <div style={{ fontSize: 10, color: '#888', marginBottom: 8 }}>{menu.badge}</div>
-
                   <div style={{ background: '#fff', borderRadius: 8, padding: '8px', marginBottom: 8 }}>
                     <div style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>칼로리</div>
                     <div style={{ fontSize: 16, fontWeight: 900, color: menu.kcal < 450 ? '#3B6D11' : '#e67e22' }}>{menu.kcal}kcal</div>
                   </div>
-
                   <div style={{ background: '#fff', borderRadius: 8, padding: '8px', marginBottom: 8 }}>
                     <div style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>가격</div>
                     <div style={{ fontSize: 14, fontWeight: 900, color: '#3B6D11' }}>{menu.price.toLocaleString()}원</div>
                   </div>
-
                   <div style={{ background: '#fff', borderRadius: 8, padding: '8px', marginBottom: 12 }}>
                     <div style={{ fontSize: 10, color: '#888', marginBottom: 4 }}>영양성분</div>
                     <div style={{ fontSize: 10, color: '#3498db', fontWeight: 700 }}>탄 {menu.nutrition.carb}g</div>
                     <div style={{ fontSize: 10, color: '#e74c3c', fontWeight: 700 }}>단 {menu.nutrition.protein}g</div>
                     <div style={{ fontSize: 10, color: '#f39c12', fontWeight: 700 }}>지 {menu.nutrition.fat}g</div>
                   </div>
-
-                  <button onClick={() => { setSelectedMenu(menu.id); setShowCompare(false); }}
+                  <button onClick={() => { setSelectedMenu(menu.id); setShowCompareResult(false); setCompareSelected([]); }}
                     style={{ width: '100%', padding: '8px', borderRadius: 8, border: 'none', background: selectedMenu === menu.id ? '#3B6D11' : '#EAF3DE', color: selectedMenu === menu.id ? '#fff' : '#3B6D11', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
                     {selectedMenu === menu.id ? '선택됨 ✓' : '이걸로 선택'}
                   </button>
@@ -298,14 +358,18 @@ export default function Home() {
               ))}
             </div>
 
-            <div style={{ background: '#FFF8E8', borderRadius: 10, padding: '10px 14px', textAlign: 'center' }}>
+            <div style={{ background: '#FFF8E8', borderRadius: 10, padding: '10px 14px', textAlign: 'center', marginBottom: 10 }}>
               <div style={{ fontSize: 12, color: '#e67e22', fontWeight: 700 }}>
-                💡 {menus[1].name}이 {menus[0].kcal - menus[1].kcal}kcal 더 적어요!
+                💡 {compareMenus[1].kcal < compareMenus[0].kcal ? compareMenus[1].name : compareMenus[0].name}이 {Math.abs(compareMenus[0].kcal - compareMenus[1].kcal)}kcal 더 적어요!
               </div>
               <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>
-                가격 차이: {(menus[0].price - menus[1].price).toLocaleString()}원
+                가격 차이: {Math.abs(compareMenus[0].price - compareMenus[1].price).toLocaleString()}원
               </div>
             </div>
+            <button onClick={() => { setShowCompareResult(false); setShowCompare(true); }}
+              style={{ width: '100%', padding: '10px', borderRadius: 10, border: '1px solid #ddd', background: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', color: '#555' }}>
+              다시 선택하기
+            </button>
           </div>
         </div>
       )}
